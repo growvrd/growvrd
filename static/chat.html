@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GrowVRD Plant Assistant</title>
+    <style>
+        :root {
+            --primary-color: #3a7d44;
+            --primary-light: #4CAF50;
+            --primary-dark: #2d623a;
+            --accent-color: #8BC34A;
+            --text-color: #333;
+            --light-gray: #f5f7f9;
+            --border-color: #ddd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--light-gray);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        header p {
+            margin-top: 0.5rem;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 1rem auto;
+            padding: 0 1rem;
+            height: calc(100vh - 160px);
+        }
+
+        .chat-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .chat-header {
+            background-color: var(--primary-light);
+            color: white;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .chat-header button {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            color: white;
+            border-radius: 4px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-header button:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            padding: 0.8rem 1rem;
+            border-radius: 18px;
+            max-width: 85%;
+            line-height: 1.5;
+            position: relative;
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bot-message {
+            background-color: #e8f5e9;
+            border-bottom-left-radius: 5px;
+            align-self: flex-start;
+        }
+
+        .user-message {
+            background-color: #e3f2fd;
+            border-bottom-right-radius: 5px;
+            align-self: flex-end;
+            text-align: right;
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            background-color: #f9f9f9;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .chat-input input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(58, 125, 68, 0.2);
+        }
+
+        .chat-input button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            padding: 0 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .chat-input button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-top: 0.5rem;
+            padding-left: 1rem;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #888;
+            border-radius: 50%;
+            display: inline-block;
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.6); }
+            40% { transform: scale(1); }
+        }
+
+        .plant-recommendation {
+            background-color: white;
+            border: 1px solid #d0e8d0;
+            border-radius: 8px;
+            margin: 0.75rem 0;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .plant-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background-color: #f0f9f0;
+            padding: 0.75rem;
+            border-bottom: 1px solid #d0e8d0;
+        }
+
+        .plant-image {
+            width: 50px;
+            height: 50px;
+            background-color: #e0f2e0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .plant-title h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--primary-color);
+        }
+
+        .plant-title p {
+            margin: 0;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: #666;
+        }
+
+        .plant-details {
+            padding: 0.75rem;
+        }
+
+        .plant-details p {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .plant-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .plant-tag {
+            background-color: #f0f9f0;
+            color: var(--primary-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        footer {
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            background-color: white;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 600px) {
+            .main-container {
+                padding: 0 0.5rem;
+                height: calc(100vh - 140px);
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .plant-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GrowVRD Plant Assistant</h1>
+        <p>Find your perfect plants with AI-powered recommendations</p>
+    </header>
+
+    <div class="main-container">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2>Chat with our Plant Expert</h2>
+                <button id="reset-button">New Conversation</button>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message">
+                    Hi! I'm your GrowVRD plant assistant. I can help you find the perfect plants for your space. What kind of plants are you looking for?
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="chat-input">
+                    <input type="text" id="message-input" placeholder="Type your message here..." aria-label="Type your message">
+                    <button id="send-button">Send</button>
+                </div>
+                <div class="typing-indicator hidden" id="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    Thinking...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        © 2025 GrowVRD - Your Plant Care Assistant
+    </footer>
+
+    <script>
+        // DOM elements
+        const chatMessages = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const resetButton = document.getElementById('reset-button');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        // Session ID generation
+        let sessionId = localStorage.getItem('growvrd_session_id');
+        if (!sessionId) {
+            sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+            localStorage.setItem('growvrd_session_id', sessionId);
+        }
+
+        // Plant emoji mapping
+        const plantEmojis = {
+            'snake_plant': '🪴',
+            'pothos': '🌿',
+            'fiddle_leaf_fig': '🌳',
+            'mint': '🌱',
+            'aloe_vera': '🌵',
+            'monstera': '🌱',
+            'peace_lily': '🌸',
+            'orchid': '🌺',
+            'jade_plant': '🌵',
+            'boston_fern': '🌿',
+            'spider_plant': '🌱',
+            'basil': '🌿',
+            'thyme': '🌿',
+            'dill': '🌿',
+            'cilantro': '🌿'
+        };
+
+        // Get default emoji for plants not in the mapping
+        function getPlantEmoji(plantName) {
+            return plantEmojis[plantName] || '🌱';
+        }
+
+        // Add a user message to the chat
+        function addUserMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Add a bot message to the chat
+        function addBotMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot-message';
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Add plant recommendations to the chat
+        function addPlantRecommendations(plants) {
+            const container = document.createElement('div');
+            container.className = 'recommendations-container';
+
+            plants.forEach(plant => {
+                const plantDiv = document.createElement('div');
+                plantDiv.className = 'plant-recommendation';
+
+                const plantName = (plant.name || '').replace(/_/g, ' ');
+                const scientificName = (plant.scientific_name || '').replace(/_/g, ' ');
+                const description = plant.description || 'No description available';
+                const maintenance = plant.maintenance || '';
+                const light = plant.natural_sunlight_needs || '';
+                const water = plant.water_frequency_days || '';
+
+                // Create the plant header with image/emoji
+                const plantHeader = document.createElement('div');
+                plantHeader.className = 'plant-header';
+
+                const plantImage = document.createElement('div');
+                plantImage.className = 'plant-image';
+                plantImage.textContent = getPlantEmoji(plant.name);
+
+                const plantTitle = document.createElement('div');
+                plantTitle.className = 'plant-title';
+
+                const plantNameH3 = document.createElement('h3');
+                plantNameH3.textContent = plantName.charAt(0).toUpperCase() + plantName.slice(1);
+
+                const scientificNameP = document.createElement('p');
+                scientificNameP.textContent = scientificName;
+
+                plantTitle.appendChild(plantNameH3);
+                plantTitle.appendChild(scientificNameP);
+
+                plantHeader.appendChild(plantImage);
+                plantHeader.appendChild(plantTitle);
+
+                // Create the plant details
+                const plantDetails = document.createElement('div');
+                plantDetails.className = 'plant-details';
+
+                const descriptionP = document.createElement('p');
+                descriptionP.textContent = description;
+
+                const plantTags = document.createElement('div');
+                plantTags.className = 'plant-tags';
+
+                if (maintenance) {
+                    const maintenanceTag = document.createElement('span');
+                    maintenanceTag.className = 'plant-tag';
+                    maintenanceTag.textContent = `Maintenance: ${maintenance}`;
+                    plantTags.appendChild(maintenanceTag);
+                }
+
+                if (light) {
+                    const lightTag = document.createElement('span');
+                    lightTag.className = 'plant-tag';
+                    lightTag.textContent = `Light: ${light.replace(/_/g, ' ')}`;
+                    plantTags.appendChild(lightTag);
+                }
+
+                if (water) {
+                    const waterTag = document.createElement('span');
+                    waterTag.className = 'plant-tag';
+                    waterTag.textContent = `Water: every ${water} days`;
+                    plantTags.appendChild(waterTag);
+                }
+
+                plantDetails.appendChild(descriptionP);
+                plantDetails.appendChild(plantTags);
+
+                // Assemble the plant recommendation
+                plantDiv.appendChild(plantHeader);
+                plantDiv.appendChild(plantDetails);
+
+                container.appendChild(plantDiv);
+            });
+
+            chatMessages.appendChild(container);
+            scrollToBottom();
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            typingIndicator.classList.remove('hidden');
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            typingIndicator.classList.add('hidden');
+        }
+
+        // Scroll to the bottom of the chat
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Send a message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addUserMessage(message);
+            messageInput.value = '';
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            // Send to API
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    session_id: sessionId
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide typing indicator
+                hideTypingIndicator();
+
+                console.log('API Response:', data);
+
+                // Add bot response
+                if (data.content) {
+                    addBotMessage(data.content);
+                }
+
+                // If there are plant recommendations
+                if (data.type === 'recommendation' && data.data && data.data.plants) {
+                    addPlantRecommendations(data.data.plants);
+                }
+            })
+            .catch(error => {
+                // Hide typing indicator
+                hideTypingIndicator();
+
+                console.error('Error:', error);
+                addBotMessage('Sorry, I encountered an error. Please try again.');
+            });
+        }
+
+        // Reset the conversation
+        function resetConversation() {
+            // Send reset command to the server
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: 'reset',
+                    session_id: sessionId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Clear the chat messages
+                chatMessages.innerHTML = '';
+
+                // Add the welcome message
+                addBotMessage(data.content || "Let's start over! How can I help you find the perfect plant?");
+            })
+            .catch(error => {
+                console.error('Error resetting conversation:', error);
+                // Still clear the chat and add a welcome message
+                chatMessages.innerHTML = '';
+                addBotMessage("Let's start over! How can I help you find the perfect plant?");
+            });
+
+            // Generate a new session ID
+            sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+            localStorage.setItem('growvrd_session_id', sessionId);
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        resetButton.addEventListener('click', resetConversation);
+
+        // Set focus to input on page load
+        window.addEventListener('load', function() {
+            messageInput.focus();
+        });
+    </script>
+</body>
+</html>
