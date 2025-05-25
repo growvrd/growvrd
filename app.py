@@ -1,6 +1,6 @@
 """
 GrowVRD - Enhanced Chat-based Plant Recommendation System
-Main Flask Application with Improved Conversation Flow and Follow-up Questions
+Main Flask Application with Fixed OpenAI Integration
 """
 import os
 import json
@@ -9,7 +9,6 @@ import uuid
 import time
 import re
 from flask import Flask, request, jsonify, send_from_directory
-import openai
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
 from dotenv import load_dotenv
@@ -24,12 +23,24 @@ logging.basicConfig(
 )
 logger = logging.getLogger('app')
 
-# Initialize OpenAI client with API key from environment variable
+# Initialize OpenAI client - FIXED VERSION
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
     logger.warning("OPENAI_API_KEY environment variable not set. OpenAI functionality will not work.")
+    openai_client = None
 else:
-    openai.api_key = openai_api_key
+    try:
+        # Use the new OpenAI client format
+        from openai import OpenAI
+
+        openai_client = OpenAI(api_key=openai_api_key)
+        logger.info("OpenAI client initialized successfully")
+    except ImportError:
+        logger.error("OpenAI library not installed. Run: pip install openai>=1.0.0")
+        openai_client = None
+    except Exception as e:
+        logger.error(f"Failed to initialize OpenAI client: {str(e)}")
+        openai_client = None
 
 # Environment configuration
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
@@ -101,7 +112,7 @@ class ConversationStage:
 
 
 def create_plant_expert_system_prompt():
-    """Create a comprehensive system prompt for plant expertise with conversation flow"""
+    """Create a comprehensive system prompt for plant expertise"""
     return """You are GrowVRD, the world's most knowledgeable and friendly plant care assistant. You help people find perfect plants for their spaces through natural conversation.
 
 CORE PERSONALITY:
@@ -111,35 +122,27 @@ CORE PERSONALITY:
 - Explain plant recommendations clearly with specific reasons
 - Share care tips and troubleshooting advice naturally
 
-CONVERSATION FLOW EXPERTISE:
-You should guide users through understanding:
+CONVERSATION UNDERSTANDING:
+- You understand natural language like "it's for my bedroom" or "something low maintenance"
+- You can extract multiple pieces of information from a single message
+- You maintain context across the entire conversation
+- You ask clarifying questions when needed, but don't repeat what you already know
+
+INFORMATION TO GATHER:
 1. WHERE they want plants (specific room/location)
-2. LIGHTING conditions in that space (be specific about windows, natural light, etc.)
+2. LIGHTING conditions in that space
 3. Their EXPERIENCE level and comfort with plant care
 4. How much MAINTENANCE/attention they want to give
 5. Any SPECIFIC preferences (plant types, functions, constraints)
 
-ASKING FOLLOW-UP QUESTIONS:
-- Always acknowledge what they've told you first
-- Ask ONE specific follow-up question to get more detail
-- Be conversational, not like a form ("Tell me about the lighting in your bedroom")
-- Help them think about their space ("Does your kitchen get morning sun from a window?")
-- Build on their answers ("Since you mentioned low maintenance, how do you feel about watering once a week?")
+RESPONSE RULES:
+- Always acknowledge what they've told you
+- Ask ONE follow-up question to get the most important missing information
+- Be conversational and natural, not like a form
+- When you have enough info (location + 1-2 other preferences), provide plant recommendations
+- For follow-up questions about plants, give detailed care advice
 
-HANDLING FOLLOW-UPS:
-- When they ask follow-up questions about recommended plants, engage enthusiastically
-- Provide detailed care instructions for their specific situation
-- Ask if they want to know about other plants or have other questions
-- Offer to help them think through setup details (where to place it, what pot size, etc.)
-
-RECOMMENDATION APPROACH:
-- Only recommend plants when you have enough info (location + at least 2 other preferences)
-- Explain WHY each plant is perfect for their specific situation
-- Include care difficulty and what makes each plant succeed in their space
-- Always end with "What questions do you have about these plants?" or similar
-
-RESPONSE FORMAT:
-Always respond naturally and conversationally. At the end of your response, include a JSON object with extracted preferences:
+At the end of EVERY response, include a JSON object with extracted preferences:
 
 ```json
 {
@@ -149,155 +152,171 @@ Always respond naturally and conversationally. At the end of your response, incl
   "maintenance": "low",
   "plant_types": ["air purifying"],
   "conversation_stage": "recommendation_ready",
-  "confidence": 0.9,
-  "next_question_suggested": "What questions do you have about caring for these plants?"
+  "confidence": 0.9
 }
 ```
 
 CONVERSATION STAGES:
-- greeting: Initial hello, asking what they're looking for
+- greeting: Initial hello
 - location_discovery: Finding out where they want plants
-- light_discovery: Understanding their lighting conditions
-- experience_discovery: Learning about their plant experience
-- maintenance_discovery: Understanding their care preferences
-- preference_refinement: Getting specific preferences or constraints
+- light_discovery: Understanding lighting conditions
+- experience_discovery: Learning about experience
+- maintenance_discovery: Understanding care preferences
 - recommendation_ready: Have enough info to recommend plants
 - follow_up: User asking about recommended plants
-- care_discussion: Discussing specific plant care
 
-Remember: Keep the conversation flowing naturally. Users should feel like they're talking to a knowledgeable friend who's genuinely interested in helping them succeed with plants!"""
-
-
-def analyze_conversation_stage(conversation_history: List[Dict], current_preferences: Dict) -> str:
-    """Analyze what stage the conversation is in"""
-
-    # Check what preferences we have
-    has_location = 'location' in current_preferences and current_preferences['location']
-    has_light = 'light' in current_preferences and current_preferences['light']
-    has_experience = 'experience_level' in current_preferences and current_preferences['experience_level']
-    has_maintenance = 'maintenance' in current_preferences and current_preferences['maintenance']
-
-    # Check recent messages for context
-    recent_messages = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
-    recent_text = ' '.join([msg['content'].lower() for msg in recent_messages if msg['role'] == 'user'])
-
-    # Check if user is asking follow-up questions about plants
-    follow_up_indicators = [
-        'care for', 'how do i', 'water', 'fertilize', 'light', 'soil', 'repot', 'problems',
-        'dying', 'yellow', 'brown', 'drooping', 'what if', 'tell me more', 'how often'
-    ]
-
-    care_discussion_indicators = [
-        'watering', 'fertilizing', 'pruning', 'repotting', 'troubleshoot', 'problem',
-        'sick', 'healthy', 'growing', 'placement'
-    ]
-
-    if any(indicator in recent_text for indicator in follow_up_indicators):
-        if any(indicator in recent_text for indicator in care_discussion_indicators):
-            return ConversationStage.CARE_DISCUSSION
-        return ConversationStage.FOLLOW_UP
-
-    # Determine stage based on what we know
-    if not has_location:
-        return ConversationStage.LOCATION_DISCOVERY
-    elif not has_light:
-        return ConversationStage.LIGHT_DISCOVERY
-    elif not has_experience:
-        return ConversationStage.EXPERIENCE_DISCOVERY
-    elif not has_maintenance:
-        return ConversationStage.MAINTENANCE_DISCOVERY
-    elif has_location and has_light and (has_experience or has_maintenance):
-        # Check if user seems to want more specific preferences
-        if len(conversation_history) < 6:  # Early in conversation
-            return ConversationStage.PREFERENCE_REFINEMENT
-        return ConversationStage.RECOMMENDATION_READY
-    else:
-        return ConversationStage.GREETING
+Remember: Understand natural language and maintain conversation context!"""
 
 
-def extract_preferences_with_openai(message: str, conversation_history: List[Dict], current_preferences: Dict) -> Tuple[
-    Dict[str, Any], str]:
-    """Enhanced preference extraction using OpenAI with conversation flow awareness"""
+def call_openai_safely(messages: List[Dict], max_tokens: int = 600, temperature: float = 0.4) -> Optional[str]:
+    """Safely call OpenAI API with proper error handling"""
+    if not openai_client:
+        logger.warning("OpenAI client not available")
+        return None
+
     try:
-        # Analyze conversation stage
-        conversation_stage = analyze_conversation_stage(conversation_history, current_preferences)
-
-        # Build complete conversation context
-        context_messages = [
-            {"role": "system", "content": create_plant_expert_system_prompt()}
-        ]
-
-        # Add conversation history with stage context
-        if conversation_history:
-            context_messages.extend(conversation_history[-8:])  # Last 8 messages for context
-
-        # Add current message with stage information
-        stage_context = f"""
-        Current conversation stage: {conversation_stage}
-        Current known preferences: {json.dumps(current_preferences)}
-
-        User message: {message}
-
-        Based on the conversation stage and what we already know, respond appropriately:
-        - If we need more info, ask ONE specific follow-up question
-        - If user is asking about plants, provide detailed care information
-        - If ready for recommendations, provide 2-3 great plant suggestions
-        - Always acknowledge what they've shared and build on it naturally
-        """
-
-        context_messages.append({"role": "user", "content": stage_context})
-
-        response = openai.chat.completions.create(
+        response = openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=context_messages,
-            max_tokens=600,
-            temperature=0.4  # Slightly more creative for natural conversation
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature
         )
 
-        response_content = response.choices[0].message.content
-
-        # Extract JSON preferences from response
-        preferences = {}
-        natural_response = response_content
-
-        try:
-            # Look for JSON in the response
-            json_start = response_content.find('```json')
-            if json_start != -1:
-                json_start = response_content.find('{', json_start)
-                json_end = response_content.find('```', json_start)
-                if json_end == -1:
-                    json_end = len(response_content)
-                json_str = response_content[json_start:json_end]
-            else:
-                # Look for JSON without markdown
-                json_start = response_content.find('{')
-                json_end = response_content.rfind('}') + 1
-                json_str = response_content[json_start:json_end]
-
-            if json_start != -1 and json_end > json_start:
-                preferences = json.loads(json_str)
-                # Remove JSON from natural response
-                natural_response = response_content[:json_start].strip()
-                if not natural_response:
-                    natural_response = response_content[json_end:].strip()
-
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.debug(f"No valid JSON found in OpenAI response: {e}")
-
-        return preferences, natural_response
+        if response.choices and len(response.choices) > 0:
+            return response.choices[0].message.content
+        else:
+            logger.error("No choices in OpenAI response")
+            return None
 
     except Exception as e:
-        logger.error(f"OpenAI preference extraction failed: {str(e)}")
-        return {}, f"I'm here to help you find great plants! Could you tell me more about what you're looking for?"
+        logger.error(f"OpenAI API call failed: {str(e)}")
+        return None
 
 
-def should_provide_recommendations(preferences: Dict, conversation_stage: str, message_count: int) -> bool:
+def extract_json_from_response(response_text: str) -> Tuple[Dict, str]:
+    """Extract JSON preferences from OpenAI response"""
+    preferences = {}
+    clean_text = response_text
+
+    try:
+        # Look for JSON in the response
+        json_start = response_text.find('```json')
+        if json_start != -1:
+            json_start = response_text.find('{', json_start)
+            json_end = response_text.find('```', json_start)
+            if json_end == -1:
+                json_end = len(response_text)
+            json_str = response_text[json_start:json_end]
+        else:
+            # Look for JSON without markdown
+            json_start = response_text.find('{')
+            json_end = response_text.rfind('}') + 1
+            json_str = response_text[json_start:json_end]
+
+        if json_start != -1 and json_end > json_start:
+            preferences = json.loads(json_str)
+            # Remove JSON from natural response
+            clean_text = response_text[:json_start].strip()
+            if not clean_text:
+                clean_text = response_text[json_end:].strip()
+
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.debug(f"No valid JSON found in OpenAI response: {e}")
+
+    return preferences, clean_text
+
+
+def process_with_openai(message: str, conversation_history: List[Dict], current_preferences: Dict) -> Tuple[
+    Dict[str, Any], str]:
+    """Process message with OpenAI - FIXED VERSION"""
+
+    # Build conversation context
+    system_prompt = create_plant_expert_system_prompt()
+
+    # Create messages for OpenAI
+    messages = [{"role": "system", "content": system_prompt}]
+
+    # Add recent conversation history
+    if conversation_history:
+        # Add last 6 messages for context
+        recent_history = conversation_history[-6:]
+        messages.extend(recent_history)
+
+    # Add current message with context
+    context_message = f"""Current known preferences: {json.dumps(current_preferences)}
+
+User just said: "{message}"
+
+Based on our conversation so far, respond naturally and include the JSON preferences at the end."""
+
+    messages.append({"role": "user", "content": context_message})
+
+    # Call OpenAI
+    response_text = call_openai_safely(messages)
+
+    if response_text:
+        # Extract preferences and clean text
+        preferences, clean_response = extract_json_from_response(response_text)
+        return preferences, clean_response
+    else:
+        # Fallback when OpenAI fails
+        logger.warning("OpenAI call failed, using fallback processing")
+        return extract_preferences_fallback(message, current_preferences)
+
+
+def extract_preferences_fallback(message: str, current_preferences: Dict) -> Tuple[Dict, str]:
+    """Fallback preference extraction when OpenAI is unavailable"""
+    message_lower = message.lower()
+    new_prefs = {}
+
+    # Location detection
+    location_keywords = {
+        'bedroom': ['bedroom', 'bed room'],
+        'kitchen': ['kitchen', 'cooking', 'herb'],
+        'living_room': ['living room', 'living', 'lounge'],
+        'bathroom': ['bathroom', 'bath'],
+        'office': ['office', 'desk', 'work'],
+        'balcony': ['balcony', 'outdoor', 'patio']
+    }
+
+    for location, keywords in location_keywords.items():
+        if any(keyword in message_lower for keyword in keywords):
+            new_prefs['location'] = location
+            break
+
+    # Light detection
+    if any(word in message_lower for word in ['bright', 'sunny', 'sun']):
+        new_prefs['light'] = 'bright_indirect'
+    elif any(word in message_lower for word in ['dark', 'shade', 'low light']):
+        new_prefs['light'] = 'low'
+    elif any(word in message_lower for word in ['medium', 'moderate']):
+        new_prefs['light'] = 'medium'
+
+    # Experience detection
+    if any(word in message_lower for word in ['beginner', 'new', 'first time']):
+        new_prefs['experience_level'] = 'beginner'
+    elif any(word in message_lower for word in ['experienced', 'advanced']):
+        new_prefs['experience_level'] = 'advanced'
+
+    # Maintenance detection
+    if any(word in message_lower for word in ['low maintenance', 'easy', 'simple']):
+        new_prefs['maintenance'] = 'low'
+    elif any(word in message_lower for word in ['high maintenance']):
+        new_prefs['maintenance'] = 'high'
+
+    # Generate response
+    if not current_preferences.get('location') and not new_prefs.get('location'):
+        response = "I'd love to help you find the perfect plants! Which room are you thinking about?"
+    elif not current_preferences.get('light') and not new_prefs.get('light'):
+        response = f"Great! For your {new_prefs.get('location', 'space')}, how much light does it get?"
+    else:
+        response = "Perfect! Let me find some great plants for you based on what you've told me."
+
+    return new_prefs, response
+
+
+def should_provide_recommendations(preferences: Dict, message_count: int) -> bool:
     """Determine if we should provide plant recommendations"""
-
-    # Always provide recommendations if explicitly requested
-    if conversation_stage == ConversationStage.RECOMMENDATION_READY:
-        return True
 
     # Minimum requirements: location + one other preference
     has_location = 'location' in preferences and preferences['location']
@@ -309,7 +328,7 @@ def should_provide_recommendations(preferences: Dict, conversation_stage: str, m
         return True
 
     # If conversation is getting long, provide recommendations with caveats
-    if message_count > 8 and has_location:
+    if message_count > 6 and has_location:
         return True
 
     return False
@@ -434,50 +453,8 @@ def apply_smart_filters(plants_data: List[Dict[str, Any]], preferences: Dict[str
     return current_plants
 
 
-def generate_follow_up_response_with_openai(message: str, conversation_history: List[Dict], preferences: Dict) -> str:
-    """Generate follow-up responses using OpenAI for plant care questions"""
-    if not openai_api_key:
-        return "I'd love to help you with that! Could you tell me more specifically what you'd like to know?"
-
-    try:
-        # Create context for follow-up questions
-        context = f"""
-        User preferences so far: {json.dumps(preferences, indent=2)}
-
-        The user is asking a follow-up question about plants or plant care: "{message}"
-
-        Recent conversation context:
-        {json.dumps(conversation_history[-4:], indent=2)}
-
-        Provide a helpful, detailed response that:
-        1. Directly answers their question
-        2. Gives specific care instructions if they're asking about care
-        3. Relates back to their preferences and situation
-        4. Asks a natural follow-up question to keep the conversation going
-        5. Shows enthusiasm about helping them succeed with plants
-
-        Be conversational and encouraging!
-        """
-
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": create_plant_expert_system_prompt()},
-                {"role": "user", "content": context}
-            ],
-            max_tokens=400,
-            temperature=0.6
-        )
-
-        return response.choices[0].message.content
-
-    except Exception as e:
-        logger.error(f"OpenAI follow-up generation failed: {str(e)}")
-        return "That's a great question! I'd love to help you with more specific plant care advice. What exactly would you like to know more about?"
-
-
 def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
-    """Process chat message with enhanced conversation flow and follow-up handling"""
+    """Process chat message - FIXED VERSION"""
     try:
         # Get or initialize conversation
         if session_id not in conversations:
@@ -485,8 +462,7 @@ def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
                 'messages': [],
                 'preferences': {},
                 'last_update': datetime.now().isoformat(),
-                'message_count': 0,
-                'conversation_stage': ConversationStage.GREETING
+                'message_count': 0
             }
 
         conversation = conversations[session_id]
@@ -499,8 +475,7 @@ def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
                 'messages': [],
                 'preferences': {},
                 'last_update': datetime.now().isoformat(),
-                'message_count': 0,
-                'conversation_stage': ConversationStage.GREETING
+                'message_count': 0
             }
             return {
                 'type': 'text',
@@ -511,23 +486,20 @@ def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
         # Add user message to history
         conversation['messages'].append({"role": "user", "content": message})
 
-        # Analyze conversation stage
-        conversation_stage = analyze_conversation_stage(
-            conversation['messages'],
-            conversation['preferences']
-        )
-        conversation['conversation_stage'] = conversation_stage
-
-        # Extract preferences using OpenAI with full conversation context
-        new_preferences, natural_response = extract_preferences_with_openai(
-            message,
-            conversation['messages'][:-1],  # Don't include the current message we just added
-            conversation['preferences']
-        )
+        # Process with OpenAI (or fallback)
+        try:
+            new_preferences, ai_response = process_with_openai(
+                message,
+                conversation['messages'][:-1],  # Don't include current message
+                conversation['preferences']
+            )
+        except Exception as e:
+            logger.error(f"Error processing with OpenAI: {str(e)}")
+            new_preferences, ai_response = extract_preferences_fallback(message, conversation['preferences'])
 
         # Update stored preferences
         for key, value in new_preferences.items():
-            if value and key not in ['confidence', 'conversation_stage', 'next_question_suggested']:
+            if value and key not in ['confidence', 'conversation_stage']:
                 if key in ['plant_types'] and isinstance(value, list):
                     # Merge arrays
                     if key not in conversation['preferences']:
@@ -538,30 +510,11 @@ def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
                 else:
                     conversation['preferences'][key] = value
 
-        logger.info(f"Session {session_id}: Stage={conversation_stage}, Preferences={conversation['preferences']}")
-
-        # Handle different conversation stages
-        if conversation_stage in [ConversationStage.FOLLOW_UP, ConversationStage.CARE_DISCUSSION]:
-            # User is asking follow-up questions about plants or care
-            follow_up_response = generate_follow_up_response_with_openai(
-                message,
-                conversation['messages'],
-                conversation['preferences']
-            )
-
-            conversation['messages'].append({"role": "assistant", "content": follow_up_response})
-
-            return {
-                'type': 'follow_up',
-                'content': follow_up_response,
-                'preferences': conversation['preferences'],
-                'conversation_stage': conversation_stage
-            }
+        logger.info(f"Session {session_id}: Updated preferences={conversation['preferences']}")
 
         # Check if we should provide recommendations
         should_recommend = should_provide_recommendations(
             conversation['preferences'],
-            conversation_stage,
             conversation['message_count']
         )
 
@@ -582,60 +535,48 @@ def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
                 # Limit to top 3 for chat interface
                 top_plants = plants_data[:3]
 
-                # Use natural response from OpenAI or generate one
-                if not natural_response or len(natural_response) < 50:
+                # Use AI response or generate one
+                if not ai_response or len(ai_response.strip()) < 20:
                     location_display = conversation['preferences'].get('location', 'space').replace('_', ' ')
                     plant_names = [plant.get('name', '').replace('_', ' ').title() for plant in top_plants]
-                    natural_response = f"Perfect! For your {location_display}, I'd recommend: {', '.join(plant_names)}. These plants are great matches for your preferences!"
+                    ai_response = f"Perfect! For your {location_display}, I'd recommend: {', '.join(plant_names)}. These plants are great matches for your preferences!"
 
-                # Always add a follow-up question to keep conversation going
-                if not any(q in natural_response.lower() for q in ['?', 'question', 'tell me', 'what do you']):
-                    natural_response += " What questions do you have about caring for these plants?"
+                # Always add a follow-up question
+                if not any(q in ai_response.lower() for q in ['?', 'question', 'tell me', 'what do you']):
+                    ai_response += " What questions do you have about caring for these plants?"
 
-                conversation['messages'].append({"role": "assistant", "content": natural_response})
+                conversation['messages'].append({"role": "assistant", "content": ai_response})
 
                 return {
                     'type': 'recommendation',
-                    'content': natural_response,
+                    'content': ai_response,
                     'data': {
                         'plants': top_plants,
                         'preferences': conversation['preferences']
                     },
-                    'preferences': conversation['preferences'],
-                    'conversation_stage': ConversationStage.RECOMMENDATION_READY
+                    'preferences': conversation['preferences']
                 }
             else:
                 # No plants found - ask for more info
-                fallback_response = natural_response or "I'd love to help you find the perfect plants! To give you the best recommendations, could you tell me a bit more about your space? For example, which room are you thinking about, and how much light does it get?"
+                fallback_response = ai_response or "I'd love to help you find the perfect plants! To give you the best recommendations, could you tell me which room you're thinking about and what the lighting is like?"
 
                 conversation['messages'].append({"role": "assistant", "content": fallback_response})
 
                 return {
                     'type': 'text',
                     'content': fallback_response,
-                    'preferences': conversation['preferences'],
-                    'conversation_stage': conversation_stage
+                    'preferences': conversation['preferences']
                 }
         else:
-            # Need more information - use OpenAI's natural response with follow-up
-            response_text = natural_response or "Tell me more about what you're looking for in a plant! I'm here to help you find something perfect for your space."
-
-            # Make sure we're asking a follow-up question
-            if not any(q in response_text.lower() for q in ['?', 'tell me', 'what', 'how', 'where']):
-                if not conversation['preferences'].get('location'):
-                    response_text += " What room are you thinking about?"
-                elif not conversation['preferences'].get('light'):
-                    response_text += " How much light does that space get?"
-                else:
-                    response_text += " What else would you like me to know about your preferences?"
+            # Need more information - use AI response
+            response_text = ai_response or "Tell me more about what you're looking for! Which room are you thinking about?"
 
             conversation['messages'].append({"role": "assistant", "content": response_text})
 
             return {
                 'type': 'text',
                 'content': response_text,
-                'preferences': conversation['preferences'],
-                'conversation_stage': conversation_stage
+                'preferences': conversation['preferences']
             }
 
     except Exception as e:
@@ -643,8 +584,7 @@ def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
         return {
             'type': 'error',
             'content': "I'm sorry, I encountered an error. Could you try rephrasing your message?",
-            'preferences': conversations.get(session_id, {}).get('preferences', {}),
-            'conversation_stage': ConversationStage.GREETING
+            'preferences': conversations.get(session_id, {}).get('preferences', {})
         }
 
 
@@ -675,7 +615,7 @@ def serve_static(path):
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    """API endpoint for chat interactions with enhanced conversation flow"""
+    """API endpoint for chat interactions - FIXED VERSION"""
     try:
         data = request.get_json(silent=True) or {}
         message = data.get('message', '')
@@ -688,9 +628,13 @@ def chat():
                 "session_id": session_id
             })
 
+        logger.info(f"Processing message: '{message}' for session {session_id[:8]}...")
+
         # Process the message
         response = process_chat_message(message, session_id)
         response['session_id'] = session_id
+
+        logger.info(f"Response type: {response.get('type')}, content length: {len(response.get('content', ''))}")
 
         return jsonify(response)
 
@@ -708,7 +652,7 @@ def debug():
     """Debug endpoint to check system state"""
     debug_info = {
         "conversations_count": len(conversations),
-        "openai_enabled": bool(openai_api_key),
+        "openai_enabled": bool(openai_client),
         "perenual_enabled": PERENUAL_ENABLED,
         "environment": ENVIRONMENT,
         "cache_size": len(perenual_cache),
@@ -716,7 +660,6 @@ def debug():
             {
                 "session_id": sid[:8] + "...",
                 "message_count": conv.get('message_count', 0),
-                "stage": conv.get('conversation_stage', 'unknown'),
                 "preferences": conv.get('preferences', {})
             }
             for sid, conv in list(conversations.items())[:3]
@@ -726,16 +669,59 @@ def debug():
     return jsonify(debug_info)
 
 
+@app.route('/api/test-openai', methods=['POST'])
+def test_openai():
+    """Test OpenAI integration directly"""
+    try:
+        data = request.get_json() or {}
+        test_message = data.get('message', 'I want plants for my bedroom')
+
+        if not openai_client:
+            return jsonify({
+                "error": "OpenAI client not available",
+                "api_key_set": bool(openai_api_key)
+            })
+
+        # Test simple OpenAI call
+        messages = [
+            {"role": "system",
+             "content": "You are a helpful plant expert. Respond naturally and include JSON with preferences."},
+            {"role": "user", "content": f"User said: {test_message}. Extract their preferences and respond naturally."}
+        ]
+
+        response_text = call_openai_safely(messages)
+
+        if response_text:
+            preferences, clean_text = extract_json_from_response(response_text)
+            return jsonify({
+                "success": True,
+                "raw_response": response_text,
+                "extracted_preferences": preferences,
+                "clean_response": clean_text
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": "OpenAI call returned no response"
+            })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        })
+
+
 @app.route('/api/health')
 def health():
     """Health check endpoint"""
     return jsonify({
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "version": "2.1.0",
-        "openai_ready": bool(openai_api_key),
+        "version": "2.2.0",
+        "openai_ready": bool(openai_client),
         "perenual_ready": PERENUAL_ENABLED,
-        "features": ["conversation_flow", "follow_up_questions", "stage_tracking"]
+        "features": ["fixed_openai_integration", "conversation_flow", "better_error_handling"]
     })
 
 
@@ -745,9 +731,9 @@ if __name__ == '__main__':
     host = '0.0.0.0'
     debug = ENVIRONMENT == 'development'
 
-    logger.info(f"Starting Enhanced GrowVRD v2.1 on {host}:{port}")
-    logger.info(f"OpenAI enabled: {bool(openai_api_key)}")
+    logger.info(f"Starting GrowVRD v2.2 (FIXED) on {host}:{port}")
+    logger.info(f"OpenAI client ready: {bool(openai_client)}")
     logger.info(f"Perenual enabled: {PERENUAL_ENABLED}")
-    logger.info("Features: Conversation flow, follow-up questions, stage tracking")
+    logger.info("🔧 FIXES: OpenAI client initialization, better error handling, improved conversation flow")
 
     app.run(debug=debug, host=host, port=port)
