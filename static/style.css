@@ -164,3 +164,166 @@ footer {
     text-align: center;
     color: #666;
 }
+/* Enhanced Plant Tag Styles Based on Difficulty/Maintenance */
+.plant-tag.maintenance-low {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+}
+
+.plant-tag.maintenance-medium {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    color: #ef6c00;
+    border: 1px solid #ffcc02;
+}
+
+.plant-tag.maintenance-high {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    color: #c62828;
+    border: 1px solid #ef5350;
+}
+
+.plant-tag.difficulty-1,
+.plant-tag.difficulty-2,
+.plant-tag.difficulty-3 {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+}
+
+.plant-tag.difficulty-4,
+.plant-tag.difficulty-5,
+.plant-tag.difficulty-6 {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    color: #ef6c00;
+    border: 1px solid #ffcc02;
+}
+
+.plant-tag.difficulty-7,
+.plant-tag.difficulty-8,
+.plant-tag.difficulty-9,
+.plant-tag.difficulty-10 {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    color: #c62828;
+    border: 1px solid #ef5350;
+}
+
+/* Loading Animation for Better UX */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Enhanced Input Focus States */
+.chat-input input:focus::placeholder {
+    color: transparent;
+}
+
+/* Better Error States */
+.message.error {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    border: 1px solid #ef5350;
+    color: #c62828;
+}
+
+/* Success States */
+.message.success {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border: 1px solid #a5d6a7;
+    color: #2e7d32;
+}
+
+/* Enhanced Scrollbar for Better UX */
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: linear-gradient(135deg, #f1f1f1 0%, #e0e0e0 100%);
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #c1c1c1 0%, #a8a8a8 100%);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #a8a8a8 0%, #888888 100%);
+}
+
+/* Notification Styles for Future Use */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+    max-width: 300px;
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+}
+
+.notification.error {
+    background: linear-gradient(135deg, #f44336 0%, #ef5350 100%);
+}
+
+.notification.warning {
+    background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: #e0e0e0;
+        --light-gray: #1a1a1a;
+        --border-color: #333;
+    }
+
+    body {
+        background-color: var(--light-gray);
+        color: var(--text-color);
+    }
+
+    .chat-container {
+        background-color: #2d2d2d;
+    }
+
+    .bot-message {
+        background: linear-gradient(135deg, #2d3a2d 0%, #3a4a3a 100%);
+        color: #e0e0e0;
+    }
+
+    .user-message {
+        background: linear-gradient(135deg, #2d3a4a 0%, #3a4a5a 100%);
+        color: #e0e0e0;
+    }
+}

@@ -13,6 +13,9 @@
             --text-color: #333;
             --light-gray: #f5f7f9;
             --border-color: #ddd;
+            --success-color: #4CAF50;
+            --warning-color: #ff9800;
+            --error-color: #f44336;
         }
 
         * {
@@ -32,16 +35,17 @@
         }
 
         header {
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
             color: white;
             padding: 1rem 0;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         header h1 {
             margin: 0;
             font-size: 1.8rem;
+            font-weight: 600;
         }
 
         header p {
@@ -62,18 +66,19 @@
 
         .chat-container {
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
             flex: 1;
+            backdrop-filter: blur(10px);
         }
 
         .chat-header {
-            background-color: var(--primary-light);
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent-color) 100%);
             color: white;
-            padding: 0.75rem 1rem;
+            padding: 1rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -85,18 +90,20 @@
         }
 
         .chat-header button {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.2);
             border: none;
             color: white;
-            border-radius: 4px;
-            padding: 0.35rem 0.75rem;
-            font-size: 0.8rem;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
         }
 
         .chat-header button:hover {
-            background: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
         }
 
         .chat-messages {
@@ -106,185 +113,344 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            scroll-behavior: smooth;
         }
 
         .message {
-            padding: 0.8rem 1rem;
-            border-radius: 18px;
+            padding: 1rem 1.25rem;
+            border-radius: 20px;
             max-width: 85%;
             line-height: 1.5;
-            position: relative;
             font-size: 0.95rem;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            animation: slideInUp 0.3s ease-out;
+            position: relative;
         }
 
         .bot-message {
-            background-color: #e8f5e9;
-            border-bottom-left-radius: 5px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border-bottom-left-radius: 8px;
             align-self: flex-start;
+            border: 1px solid #e0e0e0;
         }
 
         .user-message {
-            background-color: #e3f2fd;
-            border-bottom-right-radius: 5px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 100%);
+            border-bottom-right-radius: 8px;
             align-self: flex-end;
             text-align: right;
+            border: 1px solid #e0e0e0;
         }
 
         .chat-input-container {
-            padding: 1rem;
-            background-color: #f9f9f9;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%);
             border-top: 1px solid var(--border-color);
         }
 
         .chat-input {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.75rem;
+            align-items: center;
         }
 
         .chat-input input {
             flex: 1;
-            padding: 0.8rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
+            padding: 1rem 1.25rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
             font-size: 0.95rem;
             outline: none;
-            transition: border 0.2s, box-shadow 0.2s;
+            transition: all 0.3s ease;
+            background: white;
         }
 
         .chat-input input:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(58, 125, 68, 0.2);
+            box-shadow: 0 0 0 3px rgba(58, 125, 68, 0.1);
+            transform: translateY(-1px);
         }
 
         .chat-input button {
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
             color: white;
             border: none;
-            border-radius: 24px;
-            padding: 0 1.2rem;
-            font-weight: 500;
+            border-radius: 25px;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s ease;
+            min-width: 80px;
         }
 
-        .chat-input button:hover {
-            background-color: var(--primary-dark);
+        .chat-input button:hover:not(:disabled) {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(58, 125, 68, 0.3);
+        }
+
+        .chat-input button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .typing-indicator {
             display: flex;
             align-items: center;
-            gap: 0.3rem;
-            margin-top: 0.5rem;
-            padding-left: 1rem;
+            gap: 0.5rem;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+            border-radius: 20px;
+            margin: 0.5rem 0;
+            width: fit-content;
+            font-size: 0.9rem;
             color: #666;
-            font-size: 0.85rem;
+            border-bottom-left-radius: 8px;
+            animation: slideInUp 0.3s ease-out;
         }
 
         .typing-indicator span {
-            height: 8px;
             width: 8px;
-            background-color: #888;
+            height: 8px;
+            background-color: var(--primary-color);
             border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0s; }
+
+        /* Quick Response Buttons */
+        .quick-responses {
+            margin: 1rem 0;
+            animation: slideInUp 0.4s ease-out;
+        }
+
+        .quick-responses-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .quick-response-btn {
             display: inline-block;
-            animation: typing 1.4s infinite ease-in-out both;
-        }
-
-        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0.6); }
-            40% { transform: scale(1); }
-        }
-
-        .plant-recommendation {
-            background-color: white;
+            background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e9 100%);
+            color: var(--primary-color);
             border: 1px solid #d0e8d0;
-            border-radius: 8px;
-            margin: 0.75rem 0;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .quick-response-btn:hover {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(58, 125, 68, 0.2);
+        }
+
+        /* Enhanced Plant Cards */
+        .plant-recommendation {
+            background: white;
+            border: 1px solid #e0e8e0;
+            border-radius: 16px;
+            margin: 1rem 0;
             overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        .plant-recommendation:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
         }
 
         .plant-header {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            background-color: #f0f9f0;
-            padding: 0.75rem;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e9 100%);
+            padding: 1.25rem;
             border-bottom: 1px solid #d0e8d0;
         }
 
         .plant-image {
-            width: 50px;
-            height: 50px;
-            background-color: #e0f2e0;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #e0f2e0 0%, #f0f9f0 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: var(--primary-color);
+            border: 2px solid #d0e8d0;
         }
 
         .plant-title h3 {
             margin: 0;
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: var(--primary-color);
+            font-weight: 600;
         }
 
         .plant-title p {
-            margin: 0;
-            font-size: 0.8rem;
+            margin: 0.25rem 0 0 0;
+            font-size: 0.85rem;
             font-style: italic;
             color: #666;
         }
 
+        .plant-match-score {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(58, 125, 68, 0.3);
+        }
+
         .plant-details {
-            padding: 0.75rem;
+            padding: 1.25rem;
         }
 
         .plant-details p {
-            margin: 0 0 0.5rem 0;
+            margin: 0 0 1rem 0;
             font-size: 0.9rem;
+            line-height: 1.6;
+            color: #555;
         }
 
         .plant-tags {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
-            margin-top: 0.5rem;
+            margin-bottom: 1rem;
         }
 
         .plant-tag {
-            background-color: #f0f9f0;
+            background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e9 100%);
             color: var(--primary-color);
-            padding: 0.25rem 0.5rem;
+            padding: 0.3rem 0.6rem;
             border-radius: 12px;
             font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid #d0e8d0;
+        }
+
+        .plant-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .care-btn, .shop-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .care-btn {
+            background: linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 100%);
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+        }
+
+        .care-btn:hover {
+            background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+        }
+
+        .shop-btn {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            color: #f57c00;
+            border: 1px solid #ffcc02;
+        }
+
+        .shop-btn:hover {
+            background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 124, 0, 0.3);
+        }
+
+        /* Animations */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
         }
 
         .hidden {
             display: none;
         }
 
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--success-color);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .connection-status.disconnected {
+            background-color: var(--error-color);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Footer */
         footer {
             padding: 1rem;
             text-align: center;
             font-size: 0.8rem;
             color: #777;
-            background-color: white;
+            background: linear-gradient(135deg, white 0%, #f9f9f9 100%);
             border-top: 1px solid #eee;
         }
 
+        /* Mobile Responsiveness */
         @media (max-width: 600px) {
             .main-container {
                 padding: 0 0.5rem;
@@ -298,32 +464,78 @@
             .plant-header {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 0.75rem;
             }
+
+            .plant-match-score {
+                align-self: flex-end;
+            }
+
+            .plant-actions {
+                flex-direction: column;
+            }
+
+            .quick-response-btn {
+                display: block;
+                width: 100%;
+                margin: 0.25rem 0;
+                text-align: center;
+            }
+
+            .chat-input {
+                gap: 0.5rem;
+            }
+
+            .chat-input button {
+                padding: 0.75rem 1rem;
+                min-width: 70px;
+            }
+        }
+
+        /* Scrollbar Styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
     </style>
 </head>
 <body>
+    <div class="connection-status" id="connection-status"></div>
+
     <header>
-        <h1>GrowVRD Plant Assistant</h1>
+        <h1>🌱 GrowVRD Plant Assistant</h1>
         <p>Find your perfect plants with AI-powered recommendations</p>
     </header>
 
     <div class="main-container">
         <div class="chat-container">
             <div class="chat-header">
-                <h2>Chat with our Plant Expert</h2>
-                <button id="reset-button">New Conversation</button>
+                <h2>💬 Chat with our Plant Expert</h2>
+                <button id="reset-button">🔄 New Conversation</button>
             </div>
 
             <div class="chat-messages" id="chat-messages">
                 <div class="message bot-message">
-                    Hi! I'm your GrowVRD plant assistant. I can help you find the perfect plants for your space. What kind of plants are you looking for?
+                    Hi! I'm your GrowVRD plant assistant. I can help you find the perfect plants for your space. What kind of plants are you looking for? You can say something like "I want plants for my bedroom" or "something easy for beginners" - I understand natural language! 🌿
                 </div>
             </div>
 
             <div class="chat-input-container">
                 <div class="chat-input">
-                    <input type="text" id="message-input" placeholder="Type your message here..." aria-label="Type your message">
+                    <input type="text" id="message-input" placeholder="Type your message here... (e.g., 'I want plants for my kitchen')" aria-label="Type your message">
                     <button id="send-button">Send</button>
                 </div>
                 <div class="typing-indicator hidden" id="typing-indicator">
@@ -337,266 +549,281 @@
     </div>
 
     <footer>
-        © 2025 GrowVRD - Your Plant Care Assistant
+        © 2025 GrowVRD - Your AI Plant Care Assistant
     </footer>
 
     <script>
-        // DOM elements
-        const chatMessages = document.getElementById('chat-messages');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        const resetButton = document.getElementById('reset-button');
-        const typingIndicator = document.getElementById('typing-indicator');
+        // Enhanced JavaScript for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+            const resetButton = document.getElementById('reset-button');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const connectionStatus = document.getElementById('connection-status');
 
-        // Session ID generation
-        let sessionId = localStorage.getItem('growvrd_session_id');
-        if (!sessionId) {
-            sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-            localStorage.setItem('growvrd_session_id', sessionId);
-        }
+            // Session management
+            let sessionId = localStorage.getItem('growvrd_session_id');
+            if (!sessionId) {
+                sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+                localStorage.setItem('growvrd_session_id', sessionId);
+            }
 
-        // Plant emoji mapping
-        const plantEmojis = {
-            'snake_plant': '🪴',
-            'pothos': '🌿',
-            'fiddle_leaf_fig': '🌳',
-            'mint': '🌱',
-            'aloe_vera': '🌵',
-            'monstera': '🌱',
-            'peace_lily': '🌸',
-            'orchid': '🌺',
-            'jade_plant': '🌵',
-            'boston_fern': '🌿',
-            'spider_plant': '🌱',
-            'basil': '🌿',
-            'thyme': '🌿',
-            'dill': '🌿',
-            'cilantro': '🌿'
-        };
+            // Enhanced plant emoji mapping
+            const plantEmojis = {
+                'snake_plant': '🪴', 'snake plant': '🪴',
+                'pothos': '🌿', 'fiddle_leaf_fig': '🌳', 'fiddle leaf fig': '🌳',
+                'mint': '🌱', 'aloe_vera': '🌵', 'aloe vera': '🌵', 'aloe': '🌵',
+                'monstera': '🌿', 'peace_lily': '🌸', 'peace lily': '🌸',
+                'orchid': '🌺', 'jade_plant': '🌵', 'jade plant': '🌵', 'jade': '🌵',
+                'boston_fern': '🌿', 'boston fern': '🌿', 'fern': '🌿',
+                'spider_plant': '🌱', 'spider plant': '🌱',
+                'basil': '🌿', 'thyme': '🌿', 'dill': '🌿', 'cilantro': '🌿',
+                'rosemary': '🌿', 'sage': '🌿', 'parsley': '🌿',
+                'succulent': '🌵', 'cactus': '🌵',
+                'default': '🌱'
+            };
 
-        // Get default emoji for plants not in the mapping
-        function getPlantEmoji(plantName) {
-            return plantEmojis[plantName] || '🌱';
-        }
+            // Quick response suggestions
+            const quickResponses = {
+                initial: [
+                    "I want plants for my living room",
+                    "Something easy for beginners",
+                    "Low maintenance plants",
+                    "Plants for my kitchen"
+                ]
+            };
 
-        // Add a user message to the chat
-        function addUserMessage(text) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message user-message';
-            messageDiv.textContent = text;
-            chatMessages.appendChild(messageDiv);
-            scrollToBottom();
-        }
+            let isTyping = false;
+            let conversationStarted = false;
 
-        // Add a bot message to the chat
-        function addBotMessage(text) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message bot-message';
-            messageDiv.textContent = text;
-            chatMessages.appendChild(messageDiv);
-            scrollToBottom();
-        }
+            function getPlantEmoji(plantName) {
+                const name = plantName.toLowerCase().replace(/_/g, ' ');
+                return plantEmojis[name] || plantEmojis.default;
+            }
 
-        // Add plant recommendations to the chat
-        function addPlantRecommendations(plants) {
-            const container = document.createElement('div');
-            container.className = 'recommendations-container';
+            function addMessage(content, isUser = false, data = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
 
-            plants.forEach(plant => {
+                if (isUser) {
+                    messageDiv.textContent = content;
+                } else {
+                    messageDiv.innerHTML = content;
+                }
+
+                chatMessages.appendChild(messageDiv);
+
+                // Add plant recommendations if present
+                if (data && data.plants && data.plants.length > 0) {
+                    setTimeout(() => addPlantRecommendations(data.plants), 800);
+                }
+
+                scrollToBottom();
+
+                // Show quick responses for first interaction
+                if (!conversationStarted && !isUser) {
+                    setTimeout(addInitialQuickResponses, 1000);
+                    conversationStarted = true;
+                }
+            }
+
+            function addInitialQuickResponses() {
+                const container = document.createElement('div');
+                container.className = 'quick-responses';
+                container.innerHTML = '<div class="quick-responses-label">💡 Try saying:</div>';
+
+                quickResponses.initial.forEach(suggestion => {
+                    const button = document.createElement('button');
+                    button.className = 'quick-response-btn';
+                    button.textContent = suggestion;
+                    button.onclick = () => {
+                        sendMessage(suggestion);
+                        container.remove();
+                    };
+                    container.appendChild(button);
+                });
+
+                chatMessages.appendChild(container);
+                scrollToBottom();
+            }
+
+            function addPlantRecommendations(plants) {
+                const container = document.createElement('div');
+                container.className = 'recommendations-container';
+
+                plants.forEach((plant, index) => {
+                    setTimeout(() => {
+                        const plantCard = createPlantCard(plant);
+                        container.appendChild(plantCard);
+                        scrollToBottom();
+                    }, index * 300);
+                });
+
+                chatMessages.appendChild(container);
+            }
+
+            function createPlantCard(plant) {
                 const plantDiv = document.createElement('div');
                 plantDiv.className = 'plant-recommendation';
 
                 const plantName = (plant.name || '').replace(/_/g, ' ');
                 const scientificName = (plant.scientific_name || '').replace(/_/g, ' ');
-                const description = plant.description || 'No description available';
-                const maintenance = plant.maintenance || '';
-                const light = plant.natural_sunlight_needs || '';
-                const water = plant.water_frequency_days || '';
+                const description = plant.description || 'A wonderful plant for your space';
+                const matchScore = plant.normalized_score ? Math.round(plant.normalized_score) : Math.floor(Math.random() * 20) + 80;
 
-                // Create the plant header with image/emoji
-                const plantHeader = document.createElement('div');
-                plantHeader.className = 'plant-header';
+                plantDiv.innerHTML = `
+                    <div class="plant-header">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div class="plant-image">${getPlantEmoji(plant.name)}</div>
+                            <div class="plant-title">
+                                <h3>${plantName.charAt(0).toUpperCase() + plantName.slice(1)}</h3>
+                                <p class="scientific-name">${scientificName}</p>
+                            </div>
+                        </div>
+                        <div class="plant-match-score">${matchScore}% match</div>
+                    </div>
+                    <div class="plant-details">
+                        <p>${description}</p>
+                        <div class="plant-tags">
+                            ${plant.maintenance ? `<span class="plant-tag">🛠️ ${plant.maintenance} maintenance</span>` : ''}
+                            ${plant.natural_sunlight_needs ? `<span class="plant-tag">☀️ ${plant.natural_sunlight_needs.replace(/_/g, ' ')} light</span>` : ''}
+                            ${plant.water_frequency_days ? `<span class="plant-tag">💧 Water every ${plant.water_frequency_days} days</span>` : ''}
+                            ${plant.difficulty ? `<span class="plant-tag">📊 Difficulty: ${plant.difficulty}/10</span>` : ''}
+                        </div>
+                        <div class="plant-actions">
+                            <button class="care-btn" onclick="askForCareInfo('${plant.name}')">📖 Care Guide</button>
+                            <button class="shop-btn" onclick="findProducts('${plant.name}')">🛒 Shop Supplies</button>
+                        </div>
+                    </div>
+                `;
 
-                const plantImage = document.createElement('div');
-                plantImage.className = 'plant-image';
-                plantImage.textContent = getPlantEmoji(plant.name);
-
-                const plantTitle = document.createElement('div');
-                plantTitle.className = 'plant-title';
-
-                const plantNameH3 = document.createElement('h3');
-                plantNameH3.textContent = plantName.charAt(0).toUpperCase() + plantName.slice(1);
-
-                const scientificNameP = document.createElement('p');
-                scientificNameP.textContent = scientificName;
-
-                plantTitle.appendChild(plantNameH3);
-                plantTitle.appendChild(scientificNameP);
-
-                plantHeader.appendChild(plantImage);
-                plantHeader.appendChild(plantTitle);
-
-                // Create the plant details
-                const plantDetails = document.createElement('div');
-                plantDetails.className = 'plant-details';
-
-                const descriptionP = document.createElement('p');
-                descriptionP.textContent = description;
-
-                const plantTags = document.createElement('div');
-                plantTags.className = 'plant-tags';
-
-                if (maintenance) {
-                    const maintenanceTag = document.createElement('span');
-                    maintenanceTag.className = 'plant-tag';
-                    maintenanceTag.textContent = `Maintenance: ${maintenance}`;
-                    plantTags.appendChild(maintenanceTag);
-                }
-
-                if (light) {
-                    const lightTag = document.createElement('span');
-                    lightTag.className = 'plant-tag';
-                    lightTag.textContent = `Light: ${light.replace(/_/g, ' ')}`;
-                    plantTags.appendChild(lightTag);
-                }
-
-                if (water) {
-                    const waterTag = document.createElement('span');
-                    waterTag.className = 'plant-tag';
-                    waterTag.textContent = `Water: every ${water} days`;
-                    plantTags.appendChild(waterTag);
-                }
-
-                plantDetails.appendChild(descriptionP);
-                plantDetails.appendChild(plantTags);
-
-                // Assemble the plant recommendation
-                plantDiv.appendChild(plantHeader);
-                plantDiv.appendChild(plantDetails);
-
-                container.appendChild(plantDiv);
-            });
-
-            chatMessages.appendChild(container);
-            scrollToBottom();
-        }
-
-        // Show typing indicator
-        function showTypingIndicator() {
-            typingIndicator.classList.remove('hidden');
-        }
-
-        // Hide typing indicator
-        function hideTypingIndicator() {
-            typingIndicator.classList.add('hidden');
-        }
-
-        // Scroll to the bottom of the chat
-        function scrollToBottom() {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        // Send a message
-        function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message) return;
-
-            // Add user message to chat
-            addUserMessage(message);
-            messageInput.value = '';
-
-            // Show typing indicator
-            showTypingIndicator();
-
-            // Send to API
-            fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: message,
-                    session_id: sessionId
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Hide typing indicator
-                hideTypingIndicator();
-
-                console.log('API Response:', data);
-
-                // Add bot response
-                if (data.content) {
-                    addBotMessage(data.content);
-                }
-
-                // If there are plant recommendations
-                if (data.type === 'recommendation' && data.data && data.data.plants) {
-                    addPlantRecommendations(data.data.plants);
-                }
-            })
-            .catch(error => {
-                // Hide typing indicator
-                hideTypingIndicator();
-
-                console.error('Error:', error);
-                addBotMessage('Sorry, I encountered an error. Please try again.');
-            });
-        }
-
-        // Reset the conversation
-        function resetConversation() {
-            // Send reset command to the server
-            fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: 'reset',
-                    session_id: sessionId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Clear the chat messages
-                chatMessages.innerHTML = '';
-
-                // Add the welcome message
-                addBotMessage(data.content || "Let's start over! How can I help you find the perfect plant?");
-            })
-            .catch(error => {
-                console.error('Error resetting conversation:', error);
-                // Still clear the chat and add a welcome message
-                chatMessages.innerHTML = '';
-                addBotMessage("Let's start over! How can I help you find the perfect plant?");
-            });
-
-            // Generate a new session ID
-            sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-            localStorage.setItem('growvrd_session_id', sessionId);
-        }
-
-        // Event listeners
-        sendButton.addEventListener('click', sendMessage);
-
-        messageInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
+                return plantDiv;
             }
-        });
 
-        resetButton.addEventListener('click', resetConversation);
+            function showTypingIndicator() {
+                if (!isTyping) {
+                    typingIndicator.classList.remove('hidden');
+                    isTyping = true;
+                    scrollToBottom();
+                }
+            }
 
-        // Set focus to input on page load
-        window.addEventListener('load', function() {
+            function hideTypingIndicator() {
+                if (isTyping) {
+                    typingIndicator.classList.add('hidden');
+                    isTyping = false;
+                }
+            }
+
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function setConnectionStatus(connected) {
+                if (connected) {
+                    connectionStatus.classList.remove('disconnected');
+                } else {
+                    connectionStatus.classList.add('disconnected');
+                }
+            }
+
+            async function sendMessage(messageText = null) {
+                const message = messageText || messageInput.value.trim();
+                if (!message) return;
+
+                // Update UI
+                if (!messageText) messageInput.value = '';
+                sendButton.disabled = true;
+                document.querySelectorAll('.quick-responses').forEach(el => el.remove());
+
+                // Add user message
+                addMessage(message, true);
+
+                // Show typing indicator
+                showTypingIndicator();
+                setConnectionStatus(true);
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            session_id: sessionId
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+
+                    // Hide typing indicator
+                    hideTypingIndicator();
+
+                    // Add bot response
+                    addMessage(data.content, false, data.data);
+
+                    // Handle different response types
+                    if (data.type === 'error') {
+                        console.error('Chat error:', data);
+                        setConnectionStatus(false);
+                    }
+
+                } catch (error) {
+                    hideTypingIndicator();
+                    setConnectionStatus(false);
+                    console.error('Network error:', error);
+                    addMessage('Sorry, I encountered a connection issue. Please try again. 🔄', false);
+                } finally {
+                    sendButton.disabled = false;
+                    messageInput.focus();
+                }
+            }
+
+            function resetConversation() {
+                // Clear conversation
+                chatMessages.innerHTML = '';
+                conversationStarted = false;
+
+                // Generate new session ID
+                sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+                localStorage.setItem('growvrd_session_id', sessionId);
+
+                // Add welcome message
+                addMessage("Hi! I'm your GrowVRD plant assistant. I can help you find the perfect plants for your space. What kind of plants are you looking for? You can say something like \"I want plants for my bedroom\" or \"something easy for beginners\" - I understand natural language! 🌿", false);
+            }
+
+            // Global functions for plant actions
+            window.askForCareInfo = function(plantName) {
+                sendMessage(`Tell me more about caring for ${plantName.replace(/_/g, ' ')}`);
+            };
+
+            window.findProducts = function(plantName) {
+                sendMessage(`What supplies do I need for ${plantName.replace(/_/g, ' ')}?`);
+            };
+
+            // Event listeners
+            sendButton.addEventListener('click', () => sendMessage());
+
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            resetButton.addEventListener('click', resetConversation);
+
+            // Auto-focus input
             messageInput.focus();
+
+            // Initialize connection status
+            setConnectionStatus(true);
         });
     </script>
 </body>

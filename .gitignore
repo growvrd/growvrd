@@ -22,7 +22,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-venv/lib/
+lib/
 lib64/
 parts/
 sdist/
@@ -112,5 +112,4 @@ static/uploads/
 
 # Replit specific (for later)
 .replit
-replit.nix# Created by venv; see https://docs.python.org/3/library/venv.html
-*
+replit.nix
