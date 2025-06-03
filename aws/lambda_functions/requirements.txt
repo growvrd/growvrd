@@ -1,0 +1,16 @@
+# AWS Lambda Function Dependencies
+# Keep this minimal for faster cold starts
+
+# AWS SDK (usually included in Lambda runtime)
+boto3>=1.34.0
+botocore>=1.34.0
+
+# JSON handling and utilities
+python-dateutil>=2.8.2
+
+# For Decimal handling in DynamoDB
+decimal>=1.70
+
+# Optional: Add only if specific functions need them
+# requests>=2.31.0  # Only if making external HTTP calls
+# Pillow>=10.0.0    # Only for image processing functions
