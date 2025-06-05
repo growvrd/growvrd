@@ -1,0 +1,5 @@
+id	email	subscription_status	plants_owned	kits_owned	custom_configurations	care_history	experience_level	join_date	last_login	notification_preferences	room_conditions	created_at	updated_at
+u001	user1@example.com	free	p001,p005	{}	{}	{}	beginner	2025-01-15	2025-04-01	"{""email"": true, ""sms"": false, ""push"": true}"	{}	2025-01-15	2025-04-01
+u002	user2@example.com	subscriber	p001,p003,p007,p012	k001,k003	"{""living_room"": {""humidity"": ""low"", ""temperature"": ""72F""}, ""bathroom"": {""humidity"": ""high"", ""temperature"": ""75F""}}"	{}	intermediate	2025-01-05	2025-04-05	"{""email"": true, ""sms"": true, ""push"": true}"	"{""living_room"": {""light_meter"": 450, ""humidity_sensor"": 35}}"	2025-01-05	2025-04-05
+u003	user3@example.com	free	p002	{}	{}	{}	advanced	2025-02-18	2025-03-27	"{""email"": true, ""sms"": false, ""push"": false}"	{}	2025-02-18	2025-03-27
+u004	user4@example.com	subscriber	p002,p004,p009	k002	"{""kitchen"": {""humidity"": ""medium"", ""temperature"": ""68F""}}"	{}	beginner	2025-03-01	2025-04-04	"{""email"": true, ""sms"": true, ""push"": true}"	"{""kitchen"": {""light_meter"": 650, ""humidity_sensor"": 45}}"	2025-03-01	2025-04-04

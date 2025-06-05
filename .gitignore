@@ -96,10 +96,15 @@ coverage.xml
 *.bak
 *.backup
 
-# Local data files
-data/*.csv
-data/*.tsv
-data/*.xlsx
+# UPDATED: Allow core GrowVRD data files but exclude user-generated data
+# Core application data (INCLUDE these)
+!GrowVRD_*.tsv
+
+# Exclude user-generated or temporary data files
+data/temp_*.csv
+data/temp_*.tsv
+data/backup_*.tsv
+data/export_*.xlsx
 !data/README.md
 
 # User uploads
