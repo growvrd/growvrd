@@ -1,422 +1,259 @@
+#!/usr/bin/env python3
 """
-GrowVRD - Natural Conversational Plant Assistant
-Enhanced with truly conversational AI and intelligent context management
+GrowVRD - AWS-Native Flask Application
+Full DynamoDB integration with enhanced chat processing
 """
+
 import os
-import json
 import logging
+import json
 import uuid
-import time
-import re
-from flask import Flask, request, jsonify, send_from_directory
-from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
+from typing import Dict, Any, List, Optional
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-# Set up logging
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger('app')
+logger = logging.getLogger('growvrd_app')
 
-# Initialize OpenAI client
-openai_api_key = os.environ.get("OPENAI_API_KEY")
-if not openai_api_key:
-    logger.warning("OPENAI_API_KEY environment variable not set.")
-    openai_client = None
-else:
-    try:
-        from openai import OpenAI
+# Initialize Flask app
+app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
+CORS(app, supports_credentials=True)
 
-        openai_client = OpenAI(api_key=openai_api_key)
-        logger.info("OpenAI client initialized successfully")
-    except ImportError:
-        logger.error("OpenAI library not installed. Run: pip install openai>=1.0.0")
-        openai_client = None
-    except Exception as e:
-        logger.error(f"Failed to initialize OpenAI client: {str(e)}")
-        openai_client = None
-
-# Environment configuration
-ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
-USE_MOCK_DATA = os.environ.get("USE_MOCK_DATA", "true").lower() == "true"
-DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
-
-# Import core modules
+# Initialize AWS DynamoDB connector
+dynamo_connector = None
 try:
-    from core.mock_data import get_mock_plants, get_mock_products, get_mock_kits
-    from core.filters import filter_plants
+    from aws.dynamo_connector import DynamoConnector
 
-    logger.info("Successfully imported core modules")
-except ImportError as e:
-    logger.error(f"Failed to import core modules: {str(e)}")
-
-
-    def get_mock_plants():
-        return []
+    # Configure for your migrated tables
+    dynamo_connector = DynamoConnector(
+        region_name=os.getenv('AWS_REGION', 'us-east-1'),
+        table_prefix='growvrd'
+    )
 
 
-    def get_mock_products():
-        return []
+    # Override table names to match your actual migrated tables
+    def get_full_table_name(table_type: str) -> str:
+        table_map = {
+            'plants': os.getenv('DYNAMODB_PLANTS_TABLE', 'growvrd-plants-development'),
+            'products': os.getenv('DYNAMODB_PRODUCTS_TABLE', 'growvrd-products-development'),
+            'users': os.getenv('DYNAMODB_USERS_TABLE', 'growvrd-users-development'),
+            'kits': os.getenv('DYNAMODB_KITS_TABLE', 'growvrd-kits-development'),
+            'plant_products': os.getenv('DYNAMODB_PLANT_PRODUCTS_TABLE', 'growvrd-plant-products-development'),
+            'user_plants': os.getenv('DYNAMODB_USER_PLANTS_TABLE', 'growvrd-user-plants-development'),
+            'local_vendors': os.getenv('DYNAMODB_LOCAL_VENDORS_TABLE', 'growvrd-local-vendors-development')
+        }
+        return table_map.get(table_type, f"growvrd-{table_type}-development")
 
 
-    def get_mock_kits():
-        return []
+    dynamo_connector._get_table_name = get_full_table_name
+    logger.info("✅ AWS DynamoDB connector initialized")
 
+except Exception as e:
+    logger.error(f"❌ DynamoDB initialization failed: {e}")
+    dynamo_connector = None
 
-    def filter_plants(plants, criteria):
-        return plants
-
-# Import Perenual API integration
-PERENUAL_ENABLED = False
+# Initialize enhanced chat system
+enhanced_chat_available = False
 try:
-    from api.perenual_integration import search_and_import_plants, find_and_import_plants_for_environment
+    from enhanced_chat import enhanced_chat_response
 
-    logger.info("Successfully imported Perenual API integration")
-    PERENUAL_ENABLED = True
+    enhanced_chat_available = True
+    logger.info("✅ Enhanced chat system loaded")
 except ImportError as e:
-    logger.error(f"Failed to import Perenual API integration: {str(e)}")
-    PERENUAL_ENABLED = False
+    logger.warning(f"Enhanced chat not available: {e}")
 
-# Create Flask app
-app = Flask(__name__, static_folder='static')
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+# OpenAI for fallback chat
+openai_client = None
+try:
+    from openai import OpenAI
 
-# In-memory conversation storage
+    openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    logger.info("✅ OpenAI client initialized")
+except Exception as e:
+    logger.warning(f"OpenAI not available: {e}")
+
+# Global variables for session management
 conversations = {}
-plant_cache = {}
-CACHE_EXPIRY = 3600  # 1 hour
 
 
-def create_advanced_plant_expert_prompt():
-    """Create an advanced conversational plant expert system prompt"""
-    return """You are GrowVRD, an expert plant consultant with 20+ years of experience helping people create thriving indoor gardens. You have an enthusiastic, warm personality and genuinely love helping people succeed with plants.
+def create_aws_plant_expert_prompt():
+    """Enhanced system prompt for AWS-powered plant expert"""
+    return """You are GrowVRD, an expert plant consultant with access to a comprehensive AWS-powered plant database. You're enthusiastic, knowledgeable, and genuinely excited about helping people succeed with plants.
 
-CONVERSATION STYLE:
-- Be naturally conversational, like talking to a knowledgeable friend
-- Show genuine excitement about plants and their benefits
-- Ask follow-up questions that show you're really listening
-- Remember and reference what they've already told you
-- Use their name or personal details they've shared
-- Be encouraging and supportive, especially for beginners
-- Share interesting plant facts and care tips naturally in conversation
+🌿 YOUR AWS-POWERED EXPERTISE:
+- Access to real plant database with detailed care instructions stored in DynamoDB
+- Product compatibility ratings (1-5 scale) with detailed warnings and recommendations
+- Room condition analysis and plant placement optimization
+- Personal plant tracking with nicknames and care history
+- Real-time plant health monitoring and troubleshooting
 
-UNDERSTANDING CONTEXT:
-- You perfectly understand natural language like "something for my bedroom" or "low maintenance stuff"
-- When someone says "it's for my bedroom," you know they want plants FOR their bedroom
-- You can extract multiple pieces of information from casual conversation
-- You build on previous conversation context naturally
-- You ask smart follow-up questions based on what you already know
+💬 CONVERSATION STYLE:
+- Natural, warm, and encouraging (like talking to a plant-loving friend)
+- Ask follow-up questions to understand their specific needs
+- Reference their existing plants and preferences when known
+- Give specific, actionable advice with confidence
+- Use emojis naturally to show enthusiasm
 
-INFORMATION GATHERING (gather naturally through conversation):
-1. LOCATION: Where they want plants (bedroom, kitchen, living room, etc.)
-2. LIGHTING: How much natural light the space gets
-3. EXPERIENCE: Their comfort level with plant care
-4. COMMITMENT: How much time/effort they want to spend
-5. PREFERENCES: Specific needs (air purifying, pet-safe, flowering, etc.)
-6. CONSTRAINTS: Budget, space, allergies, pets, etc.
+🎯 WHEN HELPING:
+1. **Listen actively** - understand their space, experience, goals
+2. **Recommend specifically** - not just "snake plant" but "snake plant in a terracotta pot near your east window"
+3. **Explain why** - share the reasoning behind recommendations
+4. **Anticipate needs** - suggest complementary products and future care
+5. **Follow up** - ask if they want to know more about specific aspects
 
-RESPONSE GUIDELINES:
-- Always acknowledge what they just told you
-- Build on their previous messages naturally
-- Ask ONE thoughtful follow-up question (not a list)
-- When you have enough info (location + 2-3 other details), offer specific plant recommendations
-- For plant care questions, give detailed, helpful advice
-- Be encouraging and share why certain plants are great choices
+📊 USE YOUR AWS DATA:
+- When suggesting plants, mention specific care requirements from database
+- Include product compatibility warnings (ratings 1-2 = avoid, 4-5 = excellent)
+- Reference real Amazon products and local vendor options when relevant
+- Provide realistic care schedules based on actual plant needs
 
-PLANT RECOMMENDATIONS:
-- When recommending, explain WHY each plant is perfect for them
-- Mention specific benefits (air purifying, easy care, beautiful, etc.)
-- Give a brief care overview that matches their commitment level
-- Ask if they want to know more about any specific plant
-
-ALWAYS end your response with this JSON (but don't mention it):
-```json
-{
-  "location": "bedroom",
-  "light": "medium", 
-  "experience": "beginner",
-  "maintenance": "low",
-  "specific_needs": ["air purifying", "pet safe"],
-  "ready_for_recommendations": true,
-  "conversation_tone": "enthusiastic"
-}
-```
-
-Remember: You're having a natural conversation with someone who's excited about plants. Be the knowledgeable, encouraging friend they need!"""
+Remember: You're not just giving information - you're helping someone build confidence and joy in their plant journey using real, comprehensive data! 🌱"""
 
 
-def call_openai_conversational(messages: List[Dict], max_tokens: int = 800, temperature: float = 0.7) -> Optional[str]:
-    """Call OpenAI with settings optimized for natural conversation"""
-    if not openai_client:
-        logger.warning("OpenAI client not available")
-        return None
-
+def get_user_context_from_dynamo(session_id: str, user_email: str = None) -> Dict[str, Any]:
+    """Load user context from DynamoDB"""
     try:
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,  # Higher temperature for more natural responses
-            presence_penalty=0.1,  # Slight penalty to avoid repetition
-            frequency_penalty=0.1  # Encourage variety in responses
-        )
+        if not dynamo_connector:
+            return {}
 
-        if response.choices and len(response.choices) > 0:
-            return response.choices[0].message.content
-        else:
-            logger.error("No choices in OpenAI response")
-            return None
+        user_context = {
+            'session_id': session_id,
+            'plants': [],
+            'preferences': {},
+            'room_conditions': {}
+        }
+
+        # If we have user email, load their actual data
+        if user_email:
+            try:
+                user = dynamo_connector.get_user_by_email(user_email)
+                if user:
+                    user_plants = dynamo_connector.get_user_plants(user.get('id', ''))
+                    user_context['plants'] = user_plants
+                    user_context['preferences'] = user.get('preferences', {})
+                    user_context['room_conditions'] = user.get('room_conditions', {})
+            except Exception as e:
+                logger.warning(f"Could not load user data: {e}")
+
+        return user_context
 
     except Exception as e:
-        logger.error(f"OpenAI API call failed: {str(e)}")
-        return None
+        logger.error(f"Error loading user context: {e}")
+        return {}
 
 
-def extract_preferences_and_clean_response(response_text: str) -> Tuple[Dict, str]:
-    """Extract JSON preferences and return clean conversational response"""
-    preferences = {}
-    clean_text = response_text
-
+def get_plant_recommendations_from_dynamo(query: str, filters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    """Get plant recommendations using DynamoDB data"""
     try:
-        # Look for JSON block
-        json_pattern = r'```json\s*(\{.*?\})\s*```'
-        json_match = re.search(json_pattern, response_text, re.DOTALL)
+        if not dynamo_connector:
+            return []
 
-        if json_match:
-            json_str = json_match.group(1)
-            preferences = json.loads(json_str)
-            # Remove JSON block from response
-            clean_text = re.sub(json_pattern, '', response_text, flags=re.DOTALL).strip()
-        else:
-            # Look for bare JSON
-            json_start = response_text.rfind('{')
-            json_end = response_text.rfind('}') + 1
+        # Get all plants from DynamoDB
+        plants = dynamo_connector.get_plants()
 
-            if json_start != -1 and json_end > json_start:
-                json_str = response_text[json_start:json_end]
-                try:
-                    preferences = json.loads(json_str)
-                    clean_text = response_text[:json_start].strip()
-                except json.JSONDecodeError:
-                    pass
+        # Basic filtering based on query
+        recommendations = []
+        query_lower = query.lower()
 
-    except (json.JSONDecodeError, ValueError) as e:
-        logger.debug(f"Could not extract JSON from response: {e}")
+        for plant in plants:
+            plant_name = plant.get('name', '').lower()
+            plant_desc = plant.get('description', '').lower()
 
-    return preferences, clean_text
+            # Calculate match score
+            match_score = 0
 
+            # Name matching
+            if any(word in plant_name for word in query_lower.split()):
+                match_score += 30
 
-def build_conversation_context(conversation_history: List[Dict], current_preferences: Dict, user_message: str) -> str:
-    """Build rich context for OpenAI including conversation history and current state"""
+            # Description matching
+            if any(word in plant_desc for word in query_lower.split()):
+                match_score += 20
 
-    # Build a summary of what we know
-    known_info = []
-    if current_preferences.get('location'):
-        known_info.append(f"wants plants for their {current_preferences['location']}")
-    if current_preferences.get('light'):
-        known_info.append(f"has {current_preferences['light']} light")
-    if current_preferences.get('experience'):
-        known_info.append(f"is a {current_preferences['experience']} with plants")
-    if current_preferences.get('maintenance'):
-        known_info.append(f"wants {current_preferences['maintenance']} maintenance")
-    if current_preferences.get('specific_needs'):
-        known_info.append(f"needs: {', '.join(current_preferences['specific_needs'])}")
+            # Light condition matching
+            if 'low light' in query_lower and plant.get('natural_sunlight_needs') == 'low':
+                match_score += 25
+            elif 'bright' in query_lower and plant.get('natural_sunlight_needs') == 'high':
+                match_score += 25
 
-    context = f"""CONVERSATION CONTEXT:
-What we know so far: {' | '.join(known_info) if known_info else 'Just starting conversation'}
+            # Difficulty matching
+            if 'easy' in query_lower or 'beginner' in query_lower:
+                difficulty = plant.get('difficulty', 5)
+                if isinstance(difficulty, (int, float)) and difficulty <= 3:
+                    match_score += 20
 
-RECENT CONVERSATION:
-"""
+            # Location matching
+            compatible_locations = plant.get('compatible_locations', [])
+            if isinstance(compatible_locations, list):
+                for location in ['bedroom', 'bathroom', 'kitchen', 'living room']:
+                    if location in query_lower and location in ' '.join(compatible_locations).lower():
+                        match_score += 15
 
-    # Add last few messages for context
-    recent_messages = conversation_history[-4:] if len(conversation_history) > 4 else conversation_history
-    for msg in recent_messages:
-        role = "User" if msg['role'] == 'user' else "You"
-        context += f"{role}: {msg['content']}\n"
+            # Add match score to plant
+            if match_score > 0:
+                plant['match_score'] = match_score
+                plant['normalized_score'] = min(match_score, 100)
+                recommendations.append(plant)
 
-    context += f"\nUser just said: \"{user_message}\"\n"
-    context += f"\nRespond naturally as GrowVRD, building on what you know and what they just said."
+        # Sort by match score and return top results
+        recommendations.sort(key=lambda x: x.get('match_score', 0), reverse=True)
+        return recommendations[:6]
 
-    return context
+    except Exception as e:
+        logger.error(f"Error getting plant recommendations: {e}")
+        return []
 
 
-def process_message_with_ai(message: str, conversation_history: List[Dict], current_preferences: Dict) -> Tuple[
-    Dict, str]:
-    """Process message with advanced OpenAI conversation handling"""
+def get_compatible_products_from_dynamo(plant_id: str) -> List[Dict[str, Any]]:
+    """Get compatible products for a plant using DynamoDB data"""
+    try:
+        if not dynamo_connector:
+            return []
 
-    # Create system message
-    system_prompt = create_advanced_plant_expert_prompt()
+        # Get plant-product relationships
+        relationships = dynamo_connector.get_products_for_plant(plant_id)
 
-    # Build conversation context
-    context = build_conversation_context(conversation_history, current_preferences, message)
+        compatible_products = []
+        for relationship in relationships:
+            product_id = relationship.get('product_id')
+            compatibility_rating = relationship.get('compatibility_rating', 3)
 
-    # Create messages array
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": context}
-    ]
+            if product_id:
+                # Get the actual product data
+                products = dynamo_connector.get_products()
+                product = next((p for p in products if p.get('id') == product_id), None)
 
-    # Call OpenAI
-    response_text = call_openai_conversational(messages)
+                if product:
+                    # Add compatibility info to product
+                    product['compatibility_rating'] = compatibility_rating
+                    product['compatibility_notes'] = relationship.get('compatibility_notes', '')
+                    product['primary_purpose'] = relationship.get('primary_purpose', '')
 
-    if response_text:
-        preferences, clean_response = extract_preferences_and_clean_response(response_text)
-        logger.info(f"AI extracted preferences: {preferences}")
-        return preferences, clean_response
-    else:
-        # Fallback for when OpenAI is unavailable
-        return handle_message_fallback(message, current_preferences)
+                    # Only include products with rating 3 or higher
+                    if compatibility_rating >= 3:
+                        compatible_products.append(product)
 
+        # Sort by compatibility rating
+        compatible_products.sort(key=lambda x: x.get('compatibility_rating', 0), reverse=True)
+        return compatible_products[:4]
 
-def handle_message_fallback(message: str, current_preferences: Dict) -> Tuple[Dict, str]:
-    """Enhanced fallback processing when OpenAI is unavailable"""
-    message_lower = message.lower()
-    new_prefs = {}
-
-    # Smart location detection
-    location_patterns = {
-        'bedroom': ['bedroom', 'bed room', 'sleeping', 'where i sleep'],
-        'kitchen': ['kitchen', 'cooking area', 'where i cook', 'herb garden'],
-        'living_room': ['living room', 'living', 'lounge', 'main room', 'family room'],
-        'bathroom': ['bathroom', 'bath', 'shower room'],
-        'office': ['office', 'desk', 'work space', 'study', 'home office'],
-        'balcony': ['balcony', 'patio', 'deck', 'outside', 'outdoor']
-    }
-
-    for location, patterns in location_patterns.items():
-        if any(pattern in message_lower for pattern in patterns):
-            new_prefs['location'] = location
-            break
-
-    # Light detection
-    if any(term in message_lower for term in ['bright', 'sunny', 'lots of light', 'very light']):
-        new_prefs['light'] = 'bright'
-    elif any(term in message_lower for term in ['dark', 'low light', 'not much light', 'shady']):
-        new_prefs['light'] = 'low'
-    elif any(term in message_lower for term in ['some light', 'medium', 'moderate']):
-        new_prefs['light'] = 'medium'
-
-    # Experience detection
-    if any(term in message_lower for term in ['beginner', 'new', 'first time', 'never had', 'kill plants']):
-        new_prefs['experience'] = 'beginner'
-    elif any(term in message_lower for term in ['experienced', 'good with', 'lots of plants']):
-        new_prefs['experience'] = 'experienced'
-
-    # Maintenance preferences
-    if any(term in message_lower for term in ['low maintenance', 'easy', 'simple', 'hands off', 'lazy']):
-        new_prefs['maintenance'] = 'low'
-    elif any(term in message_lower for term in ['high maintenance', 'lots of care', 'attentive']):
-        new_prefs['maintenance'] = 'high'
-
-    # Specific needs
-    needs = []
-    if any(term in message_lower for term in ['air purify', 'clean air', 'air quality']):
-        needs.append('air purifying')
-    if any(term in message_lower for term in ['pet safe', 'cat safe', 'dog safe', 'non toxic']):
-        needs.append('pet safe')
-    if any(term in message_lower for term in ['flower', 'bloom', 'colorful']):
-        needs.append('flowering')
-    if needs:
-        new_prefs['specific_needs'] = needs
-
-    # Generate contextual response
-    if not current_preferences.get('location') and not new_prefs.get('location'):
-        response = "I'd love to help you find some amazing plants! Which room are you thinking about adding some green friends to?"
-    elif new_prefs.get('location') and not current_preferences.get('light'):
-        room = new_prefs['location'].replace('_', ' ')
-        response = f"Perfect! I love helping people green up their {room}! How much natural light does it typically get - bright and sunny, or more on the dim side?"
-    elif current_preferences.get('location') and not current_preferences.get('experience'):
-        response = "Great! Before I suggest the perfect plants, are you pretty new to plant parenting, or do you have some experience keeping plants happy?"
-    else:
-        response = "Awesome! I think I have some perfect plant suggestions for you. Let me find some amazing options!"
-        new_prefs['ready_for_recommendations'] = True
-
-    return new_prefs, response
+    except Exception as e:
+        logger.error(f"Error getting compatible products: {e}")
+        return []
 
 
-def should_recommend_plants(preferences: Dict, message_count: int) -> bool:
-    """Determine if we have enough info to make good recommendations"""
-    has_location = preferences.get('location')
-    has_light_or_experience = preferences.get('light') or preferences.get('experience')
-    explicitly_ready = preferences.get('ready_for_recommendations')
-
-    # Ready if we have location + one other preference, or if AI says we're ready
-    return explicitly_ready or (has_location and has_light_or_experience) or message_count > 5
-
-
-def get_smart_plant_recommendations(preferences: Dict, limit: int = 3) -> List[Dict[str, Any]]:
-    """Get intelligent plant recommendations based on preferences"""
-    plants = []
-
-    # Try Perenual API first
-    if PERENUAL_ENABLED and preferences.get('location'):
-        try:
-            plants = find_and_import_plants_for_environment(
-                location=preferences.get('location'),
-                light_level=preferences.get('light', 'medium'),
-                maintenance_level=preferences.get('maintenance', 'low'),
-                limit=limit
-            )
-        except Exception as e:
-            logger.warning(f"Perenual API failed: {e}")
-
-    # Fallback to mock data with smart filtering
-    if not plants:
-        mock_plants = get_mock_plants()
-
-        # Apply progressive filtering
-        filter_criteria = {}
-        if preferences.get('location'):
-            filter_criteria['location'] = preferences['location']
-        if preferences.get('light'):
-            filter_criteria['light'] = preferences['light']
-        if preferences.get('experience'):
-            filter_criteria['experience_level'] = preferences['experience']
-        if preferences.get('maintenance'):
-            filter_criteria['maintenance'] = preferences['maintenance']
-
-        plants = filter_plants(mock_plants, filter_criteria)
-
-    return plants[:limit]
-
-
-def create_recommendation_response(plants: List[Dict], preferences: Dict, ai_response: str) -> str:
-    """Create an engaging recommendation response"""
-    if not plants:
-        return ai_response or "I'm having trouble finding plants that match your exact needs. Could you tell me a bit more about your space or what you're looking for?"
-
-    location = preferences.get('location', 'space').replace('_', ' ')
-
-    if ai_response and len(ai_response.strip()) > 30:
-        # Use AI response if it's substantial
-        return ai_response
-    else:
-        # Generate enthusiastic recommendation
-        plant_names = [plant.get('name', '').replace('_', ' ').title() for plant in plants]
-
-        response = f"Perfect! For your {location}, I've found some fantastic options:\n\n"
-
-        for i, plant in enumerate(plants, 1):
-            name = plant.get('name', '').replace('_', ' ').title()
-            description = plant.get('description', 'A wonderful plant choice!')
-            response += f"{i}. **{name}** - {description}\n"
-
-        response += f"\nThese are all great matches for your {location}"
-        if preferences.get('experience'):
-            response += f" and perfect for {preferences['experience']} plant parents"
-
-        response += "! Would you like to know more about caring for any of these plants? 🌿"
-
-        return response
-
-
-def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
-    """Main chat processing with enhanced conversational AI"""
+def process_chat_message_aws(message: str, session_id: str, user_email: str = None) -> Dict[str, Any]:
+    """AWS-native chat processing with DynamoDB integration"""
     try:
         # Get or create conversation
         if session_id not in conversations:
@@ -424,7 +261,8 @@ def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
                 'messages': [],
                 'preferences': {},
                 'last_update': datetime.now().isoformat(),
-                'message_count': 0
+                'message_count': 0,
+                'user_context': {}
             }
 
         conversation = conversations[session_id]
@@ -436,181 +274,374 @@ def process_chat_message(message: str, session_id: str) -> Dict[str, Any]:
                 'messages': [],
                 'preferences': {},
                 'last_update': datetime.now().isoformat(),
-                'message_count': 0
+                'message_count': 0,
+                'user_context': {}
             }
             return {
                 'type': 'text',
-                'content': "Let's start fresh! I'm GrowVRD, and I'm absolutely passionate about helping people find their perfect plants. What kind of plant adventure are you thinking about? 🌿✨",
-                'preferences': {}
+                'content': "Perfect! Let's start fresh! 🌿 I'm GrowVRD, your AWS-powered plant expert. I have access to a comprehensive plant database and I'm here to help you create your perfect indoor garden. What are you hoping to grow?",
+                'enhanced': True,
+                'aws_powered': True
             }
 
-        # Add user message to history
-        conversation['messages'].append({"role": "user", "content": message})
+        # Load user context from DynamoDB
+        user_context = get_user_context_from_dynamo(session_id, user_email)
 
-        # Process with AI
-        try:
-            new_preferences, ai_response = process_message_with_ai(
-                message,
-                conversation['messages'][:-1],
-                conversation['preferences']
+        # Use enhanced chat system if available
+        if enhanced_chat_available:
+            response = enhanced_chat_response(
+                message=message,
+                conversation_history=conversation['messages'],
+                user_context=user_context
             )
-        except Exception as e:
-            logger.error(f"AI processing failed: {e}")
-            new_preferences, ai_response = handle_message_fallback(message, conversation['preferences'])
+        else:
+            # Fallback to AWS-native chat processing
+            response = process_standard_chat_aws(message, conversation['messages'], user_context)
 
-        # Merge new preferences intelligently
-        for key, value in new_preferences.items():
-            if value and key not in ['ready_for_recommendations', 'conversation_tone']:
-                if key == 'specific_needs' and isinstance(value, list):
-                    if key not in conversation['preferences']:
-                        conversation['preferences'][key] = []
-                    for need in value:
-                        if need not in conversation['preferences'][key]:
-                            conversation['preferences'][key].append(need)
-                else:
-                    conversation['preferences'][key] = value
+        # Update conversation history
+        conversation['messages'].append({
+            'role': 'user',
+            'content': message,
+            'timestamp': datetime.now().isoformat()
+        })
 
-        # Update conversation state
+        conversation['messages'].append({
+            'role': 'assistant',
+            'content': response.get('content', ''),
+            'timestamp': datetime.now().isoformat()
+        })
+
+        # Keep only last 10 messages for memory management
+        if len(conversation['messages']) > 10:
+            conversation['messages'] = conversation['messages'][-10:]
+
         conversation['last_update'] = datetime.now().isoformat()
 
-        # Determine response type
-        if should_recommend_plants(conversation['preferences'], conversation['message_count']):
-            # Get and present recommendations
-            plants = get_smart_plant_recommendations(conversation['preferences'])
-
-            if plants:
-                response_text = create_recommendation_response(plants, conversation['preferences'], ai_response)
-
-                conversation['messages'].append({"role": "assistant", "content": response_text})
-
-                return {
-                    'type': 'recommendation',
-                    'content': response_text,
-                    'data': {
-                        'plants': plants,
-                        'preferences': conversation['preferences']
-                    },
-                    'preferences': conversation['preferences']
-                }
-            else:
-                # No plants found
-                fallback_text = ai_response or "I'm having trouble finding the perfect match. Could you tell me more about your space or what specific qualities you're looking for in a plant?"
-
-                conversation['messages'].append({"role": "assistant", "content": fallback_text})
-
-                return {
-                    'type': 'text',
-                    'content': fallback_text,
-                    'preferences': conversation['preferences']
-                }
-        else:
-            # Continue conversation
-            response_text = ai_response or "Tell me more! I'm here to help you find the perfect plants for your space."
-
-            conversation['messages'].append({"role": "assistant", "content": response_text})
-
-            return {
-                'type': 'text',
-                'content': response_text,
-                'preferences': conversation['preferences']
-            }
+        return response
 
     except Exception as e:
-        logger.error(f"Error in process_chat_message: {str(e)}", exc_info=True)
+        logger.error(f"AWS chat processing error: {str(e)}")
         return {
             'type': 'error',
-            'content': "Oops! I had a little hiccup there. Could you try asking me again? I'm excited to help you find some amazing plants! 🌱",
-            'preferences': conversations.get(session_id, {}).get('preferences', {})
+            'content': "I'm having a quick moment! Let me refocus... What can I help you with regarding plants? 🌱",
+            'session_id': session_id,
+            'aws_powered': True
         }
 
 
-# Flask Routes
+def process_standard_chat_aws(message: str, conversation_history: List[Dict], user_context: Dict[str, Any]) -> Dict[
+    str, Any]:
+    """AWS-native chat processing fallback"""
+    try:
+        if not openai_client:
+            return {
+                'type': 'error',
+                'content': "Chat system temporarily unavailable. Please try again later.",
+                'aws_powered': True
+            }
+
+        # Build conversation context
+        messages = [{"role": "system", "content": create_aws_plant_expert_prompt()}]
+
+        # Add user context if available
+        if user_context.get('plants'):
+            plant_names = [plant.get('nickname', plant.get('name', 'Unknown'))
+                           for plant in user_context['plants']]
+            context_msg = f"User's current plants: {', '.join(plant_names)}"
+            messages.append({"role": "system", "content": context_msg})
+
+        # Add conversation history
+        for msg in conversation_history[-6:]:
+            messages.append({
+                "role": msg['role'],
+                "content": msg['content']
+            })
+
+        # Add current message
+        messages.append({"role": "user", "content": message})
+
+        # Generate AI response
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=600,
+            temperature=0.7
+        )
+
+        ai_content = response.choices[0].message.content
+
+        # Try to get plant recommendations if message seems like a request
+        plants = []
+        products = []
+        if any(keyword in message.lower() for keyword in ['recommend', 'suggest', 'need', 'want', 'looking for']):
+            plants = get_plant_recommendations_from_dynamo(message)
+            if plants:
+                # Get products for the top recommended plant
+                top_plant_id = plants[0].get('id')
+                if top_plant_id:
+                    products = get_compatible_products_from_dynamo(top_plant_id)
+
+        return {
+            'type': 'text',
+            'content': ai_content,
+            'plants': plants,
+            'products': products,
+            'enhanced': False,
+            'aws_powered': True
+        }
+
+    except Exception as e:
+        logger.error(f"Standard AWS chat processing error: {e}")
+        return {
+            'type': 'error',
+            'content': "I'm having trouble processing your request. Could you try rephrasing your question about plants?",
+            'aws_powered': True
+        }
+
+
 @app.route('/')
-def home():
-    return send_from_directory('static', 'chat.html')
+def index():
+    """Main landing page"""
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        logger.error(f"Error rendering index: {e}")
+        return "<h1>🌿 GrowVRD - Your AWS-Powered Plant Expert</h1><p>Welcome to GrowVRD! <a href='/chat'>Start chatting</a></p>"
 
 
 @app.route('/chat')
-def chat_interface():
-    return send_from_directory('static', 'chat.html')
-
-
-@app.route('/form')
-def form_interface():
-    return send_from_directory('static', 'index.html')
-
-
-@app.route('/static/<path:path>')
-def serve_static(path):
-    return send_from_directory('static', path)
+def chat():
+    """Chat interface page"""
+    try:
+        if 'session_id' not in session:
+            session['session_id'] = str(uuid.uuid4())
+        return render_template('chat.html')
+    except Exception as e:
+        logger.error(f"Error rendering chat: {e}")
+        return "<h1>🌿 GrowVRD Chat</h1><p>Chat interface temporarily unavailable. Please try again later.</p>"
 
 
 @app.route('/api/chat', methods=['POST'])
-def chat():
-    """Enhanced chat API with better conversation handling"""
+def api_chat():
+    """AWS-powered chat API endpoint"""
     try:
-        data = request.get_json(silent=True) or {}
+        data = request.get_json()
         message = data.get('message', '').strip()
-        session_id = data.get('session_id', str(uuid.uuid4()))
+        user_email = data.get('user_email')  # Optional user identification
 
         if not message:
             return jsonify({
-                "type": "error",
-                "content": "I'd love to hear from you! What can I help you with?",
-                "session_id": session_id
-            })
+                'error': 'Message cannot be empty',
+                'type': 'error'
+            }), 400
 
-        logger.info(f"Processing: '{message}' (session: {session_id[:8]})")
+        # Get or create session ID
+        session_id = session.get('session_id')
+        if not session_id:
+            session_id = str(uuid.uuid4())
+            session['session_id'] = session_id
 
-        response = process_chat_message(message, session_id)
-        response['session_id'] = session_id
+        # Process the message using AWS
+        response = process_chat_message_aws(message, session_id, user_email)
 
-        logger.info(f"Response type: {response.get('type')}")
         return jsonify(response)
 
     except Exception as e:
-        logger.error(f"Chat API error: {str(e)}", exc_info=True)
+        logger.error(f"Chat API error: {e}")
         return jsonify({
-            "type": "error",
-            "content": "I'm having a moment! Could you try that again? I'm excited to help you with plants! 🌿",
-            "session_id": data.get('session_id', str(uuid.uuid4()))
+            'error': 'Internal server error',
+            'type': 'error',
+            'content': 'Sorry, I encountered an issue. Please try again!',
+            'aws_powered': True
+        }), 500
+
+
+@app.route('/api/plants/recommendations', methods=['POST'])
+def get_plant_recommendations():
+    """Get plant recommendations from DynamoDB"""
+    try:
+        data = request.get_json()
+        query = data.get('query', '')
+        filters = data.get('filters', {})
+
+        # Get recommendations from DynamoDB
+        recommendations = get_plant_recommendations_from_dynamo(query, filters)
+
+        return jsonify({
+            'recommendations': recommendations,
+            'source': 'dynamodb',
+            'aws_powered': True
         })
 
+    except Exception as e:
+        logger.error(f"Recommendations API error: {e}")
+        return jsonify({
+            'error': 'Could not get recommendations',
+            'aws_powered': True
+        }), 500
 
-@app.route('/api/debug', methods=['GET'])
-def debug():
-    """Debug endpoint"""
-    return jsonify({
-        "conversations_count": len(conversations),
-        "openai_available": bool(openai_client),
-        "perenual_enabled": PERENUAL_ENABLED,
-        "environment": ENVIRONMENT,
-        "recent_conversations": [
-            {
-                "session": sid[:8] + "...",
-                "messages": len(conv.get('messages', [])),
-                "preferences": conv.get('preferences', {})
-            }
-            for sid, conv in list(conversations.items())[-3:]
-        ]
-    })
+
+@app.route('/api/products/compatibility/<plant_id>')
+def get_product_compatibility(plant_id):
+    """Get compatible products for a specific plant from DynamoDB"""
+    try:
+        # Get compatible products from DynamoDB
+        products = get_compatible_products_from_dynamo(plant_id)
+
+        return jsonify({
+            'products': products,
+            'plant_id': plant_id,
+            'source': 'dynamodb',
+            'aws_powered': True
+        })
+
+    except Exception as e:
+        logger.error(f"Product compatibility API error: {e}")
+        return jsonify({
+            'error': 'Could not get product compatibility',
+            'aws_powered': True
+        }), 500
+
+
+@app.route('/api/kits')
+def get_plant_kits():
+    """Get available plant kits from DynamoDB"""
+    try:
+        if dynamo_connector:
+            kits = dynamo_connector.get_kits()
+        else:
+            kits = []
+
+        return jsonify({
+            'kits': kits,
+            'source': 'dynamodb',
+            'aws_powered': True
+        })
+
+    except Exception as e:
+        logger.error(f"Kits API error: {e}")
+        return jsonify({
+            'error': 'Could not get plant kits',
+            'aws_powered': True
+        }), 500
+
+
+@app.route('/api/user/plants/<user_email>')
+def get_user_plants(user_email):
+    """Get user's plants from DynamoDB"""
+    try:
+        if not dynamo_connector:
+            return jsonify({'error': 'Database not available'}), 503
+
+        # Get user first
+        user = dynamo_connector.get_user_by_email(user_email)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Get user's plants
+        user_plants = dynamo_connector.get_user_plants(user.get('id', ''))
+
+        return jsonify({
+            'plants': user_plants,
+            'user_id': user.get('id'),
+            'source': 'dynamodb',
+            'aws_powered': True
+        })
+
+    except Exception as e:
+        logger.error(f"User plants API error: {e}")
+        return jsonify({
+            'error': 'Could not get user plants',
+            'aws_powered': True
+        }), 500
 
 
 @app.route('/api/health')
-def health():
+def health_check():
+    """AWS-aware health check endpoint"""
+    health_status = {
+        'status': 'healthy',
+        'aws_powered': True,
+        'timestamp': datetime.now().isoformat(),
+        'version': '2.0.0-aws'
+    }
+
+    # Check DynamoDB health
+    if dynamo_connector:
+        try:
+            dynamo_health = dynamo_connector.health_check()
+            health_status['dynamodb'] = dynamo_health
+        except Exception as e:
+            health_status['dynamodb'] = {'status': 'unhealthy', 'error': str(e)}
+    else:
+        health_status['dynamodb'] = {'status': 'not_connected'}
+
+    # Check enhanced chat
+    health_status['enhanced_chat'] = enhanced_chat_available
+
+    # Check OpenAI
+    health_status['openai'] = openai_client is not None
+
+    return jsonify(health_status)
+
+
+@app.route('/api/session/reset', methods=['POST'])
+def reset_session():
+    """Reset user session"""
+    try:
+        session_id = session.get('session_id')
+        if session_id and session_id in conversations:
+            del conversations[session_id]
+
+        # Create new session
+        new_session_id = str(uuid.uuid4())
+        session['session_id'] = new_session_id
+
+        return jsonify({
+            'message': 'Session reset successfully',
+            'new_session_id': new_session_id,
+            'aws_powered': True
+        })
+
+    except Exception as e:
+        logger.error(f"Session reset error: {e}")
+        return jsonify({
+            'error': 'Could not reset session',
+            'aws_powered': True
+        }), 500
+
+
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors"""
     return jsonify({
-        "status": "healthy",
-        "version": "3.0.0",
-        "features": ["natural_conversation", "intelligent_context", "enhanced_ai"],
-        "openai_ready": bool(openai_client),
-        "timestamp": datetime.now().isoformat()
-    })
+        'error': 'Not found',
+        'aws_powered': True
+    }), 404
 
 
-if __name__ == '__main__':
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors"""
+    logger.error(f"Internal server error: {error}")
+    return jsonify({
+        'error': 'Internal server error',
+        'aws_powered': True
+    }), 500
+
+
+if __name__ == "__main__":
+    # Determine port
     port = int(os.environ.get('PORT', 5001))
-    logger.info(f"🌿 Starting GrowVRD v3.0 - Natural Conversational AI")
-    logger.info(f"OpenAI ready: {bool(openai_client)}")
-    logger.info(f"Running on: http://localhost:{port}")
+    debug_mode = os.environ.get('FLASK_ENV') == 'development'
 
-    app.run(debug=ENVIRONMENT == 'development', host='0.0.0.0', port=port)
+    logger.info(f"🌿 Starting GrowVRD AWS-powered application on port {port}")
+    logger.info(f"DynamoDB connector: {'✅ Connected' if dynamo_connector else '❌ Not available'}")
+    logger.info(f"Enhanced chat: {'✅ Available' if enhanced_chat_available else '❌ Not available'}")
+    logger.info(f"OpenAI: {'✅ Available' if openai_client else '❌ Not available'}")
+
+    app.run(
+        debug=debug_mode,
+        host='0.0.0.0',
+        port=port
+    )
