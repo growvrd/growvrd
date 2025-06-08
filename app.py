@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-GrowVRD - AWS-Native Flask Application
-Full DynamoDB integration with enhanced chat processing
+GrowVRD - OpenAI Optimized Flask Application
+Maximum ChatGPT-like experience with DynamoDB integration
 """
 
 import os
@@ -56,10 +56,10 @@ try:
 
 
     dynamo_connector._get_table_name = get_full_table_name
-    logger.info("✅ AWS DynamoDB connector initialized")
+    logger.info("DynamoDB connector initialized successfully")
 
 except Exception as e:
-    logger.error(f"❌ DynamoDB initialization failed: {e}")
+    logger.error(f"DynamoDB initialization failed: {e}")
     dynamo_connector = None
 
 # Initialize enhanced chat system
@@ -68,7 +68,7 @@ try:
     from enhanced_chat import enhanced_chat_response
 
     enhanced_chat_available = True
-    logger.info("✅ Enhanced chat system loaded")
+    logger.info("Enhanced OpenAI chat system loaded")
 except ImportError as e:
     logger.warning(f"Enhanced chat not available: {e}")
 
@@ -78,7 +78,7 @@ try:
     from openai import OpenAI
 
     openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-    logger.info("✅ OpenAI client initialized")
+    logger.info("OpenAI client initialized")
 except Exception as e:
     logger.warning(f"OpenAI not available: {e}")
 
@@ -86,38 +86,38 @@ except Exception as e:
 conversations = {}
 
 
-def create_aws_plant_expert_prompt():
-    """Enhanced system prompt for AWS-powered plant expert"""
+def create_plant_expert_prompt():
+    """System prompt for plant expert without excessive emojis"""
     return """You are GrowVRD, an expert plant consultant with access to a comprehensive AWS-powered plant database. You're enthusiastic, knowledgeable, and genuinely excited about helping people succeed with plants.
 
-🌿 YOUR AWS-POWERED EXPERTISE:
+YOUR EXPERTISE:
 - Access to real plant database with detailed care instructions stored in DynamoDB
 - Product compatibility ratings (1-5 scale) with detailed warnings and recommendations
 - Room condition analysis and plant placement optimization
 - Personal plant tracking with nicknames and care history
 - Real-time plant health monitoring and troubleshooting
 
-💬 CONVERSATION STYLE:
-- Natural, warm, and encouraging (like talking to a plant-loving friend)
+CONVERSATION STYLE:
+- Natural, warm, and encouraging (like talking to a knowledgeable friend)
 - Ask follow-up questions to understand their specific needs
 - Reference their existing plants and preferences when known
 - Give specific, actionable advice with confidence
-- Use emojis naturally to show enthusiasm
+- Use emojis naturally but sparingly for warmth
 
-🎯 WHEN HELPING:
-1. **Listen actively** - understand their space, experience, goals
-2. **Recommend specifically** - not just "snake plant" but "snake plant in a terracotta pot near your east window"
-3. **Explain why** - share the reasoning behind recommendations
-4. **Anticipate needs** - suggest complementary products and future care
-5. **Follow up** - ask if they want to know more about specific aspects
+WHEN HELPING:
+1. Listen actively - understand their space, experience, goals
+2. Recommend specifically - not just "snake plant" but "snake plant in a terracotta pot near your east window"
+3. Explain why - share the reasoning behind recommendations
+4. Anticipate needs - suggest complementary products and future care
+5. Follow up - ask if they want to know more about specific aspects
 
-📊 USE YOUR AWS DATA:
+USE YOUR DATA:
 - When suggesting plants, mention specific care requirements from database
 - Include product compatibility warnings (ratings 1-2 = avoid, 4-5 = excellent)
 - Reference real Amazon products and local vendor options when relevant
 - Provide realistic care schedules based on actual plant needs
 
-Remember: You're not just giving information - you're helping someone build confidence and joy in their plant journey using real, comprehensive data! 🌱"""
+Remember: You're helping someone build confidence and joy in their plant journey using real, comprehensive data."""
 
 
 def get_user_context_from_dynamo(session_id: str, user_email: str = None) -> Dict[str, Any]:
@@ -252,8 +252,8 @@ def get_compatible_products_from_dynamo(plant_id: str) -> List[Dict[str, Any]]:
         return []
 
 
-def process_chat_message_aws(message: str, session_id: str, user_email: str = None) -> Dict[str, Any]:
-    """AWS-native chat processing with DynamoDB integration"""
+def process_chat_message_openai(message: str, session_id: str, user_email: str = None) -> Dict[str, Any]:
+    """OpenAI optimized chat processing with DynamoDB integration"""
     try:
         # Get or create conversation
         if session_id not in conversations:
@@ -262,7 +262,9 @@ def process_chat_message_aws(message: str, session_id: str, user_email: str = No
                 'preferences': {},
                 'last_update': datetime.now().isoformat(),
                 'message_count': 0,
-                'user_context': {}
+                'user_context': {},
+                'total_tokens_used': 0,
+                'conversation_quality_score': 0
             }
 
         conversation = conversations[session_id]
@@ -275,73 +277,120 @@ def process_chat_message_aws(message: str, session_id: str, user_email: str = No
                 'preferences': {},
                 'last_update': datetime.now().isoformat(),
                 'message_count': 0,
-                'user_context': {}
+                'user_context': {},
+                'total_tokens_used': 0,
+                'conversation_quality_score': 0
             }
             return {
                 'type': 'text',
-                'content': "Perfect! Let's start fresh! 🌿 I'm GrowVRD, your AWS-powered plant expert. I have access to a comprehensive plant database and I'm here to help you create your perfect indoor garden. What are you hoping to grow?",
+                'content': "Perfect! Let's start fresh. I'm GrowVRD, your plant expert with access to comprehensive plant data. I'm here to help you create your perfect indoor garden with personalized recommendations. What are you hoping to grow?",
                 'enhanced': True,
-                'aws_powered': True
+                'openai_powered': True,
+                'conversation_reset': True
             }
 
-        # Load user context from DynamoDB
+        # Load comprehensive user context from DynamoDB
         user_context = get_user_context_from_dynamo(session_id, user_email)
 
-        # Use enhanced chat system if available
+        # Add conversation analytics to user context
+        user_context['conversation_stats'] = {
+            'message_count': conversation['message_count'],
+            'total_tokens_used': conversation.get('total_tokens_used', 0),
+            'session_duration': (datetime.now() - datetime.fromisoformat(
+                conversation['last_update'])).total_seconds() if conversation.get('last_update') else 0
+        }
+
+        # Use enhanced OpenAI chat system
         if enhanced_chat_available:
             response = enhanced_chat_response(
                 message=message,
                 conversation_history=conversation['messages'],
                 user_context=user_context
             )
-        else:
-            # Fallback to AWS-native chat processing
-            response = process_standard_chat_aws(message, conversation['messages'], user_context)
 
-        # Update conversation history
+            # Track token usage and conversation quality
+            if response.get('tokens_used'):
+                conversation['total_tokens_used'] = conversation.get('total_tokens_used', 0) + response['tokens_used']
+
+            # Calculate conversation quality score
+            quality_factors = []
+            if response.get('plants'):
+                quality_factors.append(10)  # Provided plant recommendations
+            if response.get('products'):
+                quality_factors.append(10)  # Provided product suggestions
+            if response.get('intent', {}).get('confidence', 0) > 0.8:
+                quality_factors.append(10)  # High confidence in understanding intent
+            if len(response.get('content', '')) > 200:
+                quality_factors.append(5)  # Detailed response
+
+            conversation['conversation_quality_score'] = sum(quality_factors)
+
+        else:
+            # Fallback to standard processing
+            response = process_standard_chat_openai(message, conversation['messages'], user_context)
+
+        # Enhanced conversation history tracking
         conversation['messages'].append({
             'role': 'user',
             'content': message,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'intent': response.get('intent', {}),
+            'character_count': len(message)
         })
 
         conversation['messages'].append({
             'role': 'assistant',
             'content': response.get('content', ''),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'provider': response.get('provider', 'unknown'),
+            'tokens_used': response.get('tokens_used', 0),
+            'plants_provided': len(response.get('plants', [])),
+            'products_provided': len(response.get('products', [])),
+            'character_count': len(response.get('content', ''))
         })
 
-        # Keep only last 10 messages for memory management
-        if len(conversation['messages']) > 10:
-            conversation['messages'] = conversation['messages'][-10:]
+        # Intelligent conversation history management
+        # Keep more history for high-quality conversations
+        max_history = 16 if conversation['conversation_quality_score'] > 30 else 10
+        if len(conversation['messages']) > max_history:
+            conversation['messages'] = conversation['messages'][-max_history:]
 
         conversation['last_update'] = datetime.now().isoformat()
+
+        # Add performance metrics to response
+        response['performance_metrics'] = {
+            'session_message_count': conversation['message_count'],
+            'total_tokens_used': conversation.get('total_tokens_used', 0),
+            'conversation_quality_score': conversation.get('conversation_quality_score', 0),
+            'response_time': datetime.now().isoformat()
+        }
 
         return response
 
     except Exception as e:
-        logger.error(f"AWS chat processing error: {str(e)}")
+        logger.error(f"OpenAI chat processing error: {str(e)}")
         return {
             'type': 'error',
-            'content': "I'm having a quick moment! Let me refocus... What can I help you with regarding plants? 🌱",
+            'content': "I'm having a technical moment! Let me refocus... What specific plant question can I help you with?",
             'session_id': session_id,
-            'aws_powered': True
+            'openai_powered': True,
+            'error_details': str(e) if os.getenv('FLASK_ENV') == 'development' else None
         }
 
 
-def process_standard_chat_aws(message: str, conversation_history: List[Dict], user_context: Dict[str, Any]) -> Dict[
+def process_standard_chat_openai(message: str, conversation_history: List[Dict], user_context: Dict[str, Any]) -> Dict[
     str, Any]:
-    """AWS-native chat processing fallback"""
+    """Standard OpenAI chat processing fallback"""
     try:
         if not openai_client:
             return {
                 'type': 'error',
                 'content': "Chat system temporarily unavailable. Please try again later.",
-                'aws_powered': True
+                'openai_powered': True
             }
 
         # Build conversation context
-        messages = [{"role": "system", "content": create_aws_plant_expert_prompt()}]
+        messages = [{"role": "system", "content": create_plant_expert_prompt()}]
 
         # Add user context if available
         if user_context.get('plants'):
@@ -387,15 +436,16 @@ def process_standard_chat_aws(message: str, conversation_history: List[Dict], us
             'plants': plants,
             'products': products,
             'enhanced': False,
-            'aws_powered': True
+            'openai_powered': True,
+            'tokens_used': response.usage.total_tokens if hasattr(response, 'usage') else None
         }
 
     except Exception as e:
-        logger.error(f"Standard AWS chat processing error: {e}")
+        logger.error(f"Standard OpenAI chat processing error: {e}")
         return {
             'type': 'error',
             'content': "I'm having trouble processing your request. Could you try rephrasing your question about plants?",
-            'aws_powered': True
+            'openai_powered': True
         }
 
 
@@ -406,7 +456,7 @@ def index():
         return render_template('index.html')
     except Exception as e:
         logger.error(f"Error rendering index: {e}")
-        return "<h1>🌿 GrowVRD - Your AWS-Powered Plant Expert</h1><p>Welcome to GrowVRD! <a href='/chat'>Start chatting</a></p>"
+        return "<h1>GrowVRD - Your Plant Expert</h1><p>Welcome to GrowVRD! <a href='/chat'>Start chatting</a></p>"
 
 
 @app.route('/chat')
@@ -418,12 +468,12 @@ def chat():
         return render_template('chat.html')
     except Exception as e:
         logger.error(f"Error rendering chat: {e}")
-        return "<h1>🌿 GrowVRD Chat</h1><p>Chat interface temporarily unavailable. Please try again later.</p>"
+        return "<h1>GrowVRD Chat</h1><p>Chat interface temporarily unavailable. Please try again later.</p>"
 
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    """AWS-powered chat API endpoint"""
+    """OpenAI-powered chat API endpoint"""
     try:
         data = request.get_json()
         message = data.get('message', '').strip()
@@ -441,8 +491,8 @@ def api_chat():
             session_id = str(uuid.uuid4())
             session['session_id'] = session_id
 
-        # Process the message using AWS
-        response = process_chat_message_aws(message, session_id, user_email)
+        # Process the message using OpenAI
+        response = process_chat_message_openai(message, session_id, user_email)
 
         return jsonify(response)
 
@@ -452,7 +502,7 @@ def api_chat():
             'error': 'Internal server error',
             'type': 'error',
             'content': 'Sorry, I encountered an issue. Please try again!',
-            'aws_powered': True
+            'openai_powered': True
         }), 500
 
 
@@ -470,14 +520,14 @@ def get_plant_recommendations():
         return jsonify({
             'recommendations': recommendations,
             'source': 'dynamodb',
-            'aws_powered': True
+            'openai_powered': True
         })
 
     except Exception as e:
         logger.error(f"Recommendations API error: {e}")
         return jsonify({
             'error': 'Could not get recommendations',
-            'aws_powered': True
+            'openai_powered': True
         }), 500
 
 
@@ -492,14 +542,14 @@ def get_product_compatibility(plant_id):
             'products': products,
             'plant_id': plant_id,
             'source': 'dynamodb',
-            'aws_powered': True
+            'openai_powered': True
         })
 
     except Exception as e:
         logger.error(f"Product compatibility API error: {e}")
         return jsonify({
             'error': 'Could not get product compatibility',
-            'aws_powered': True
+            'openai_powered': True
         }), 500
 
 
@@ -515,14 +565,14 @@ def get_plant_kits():
         return jsonify({
             'kits': kits,
             'source': 'dynamodb',
-            'aws_powered': True
+            'openai_powered': True
         })
 
     except Exception as e:
         logger.error(f"Kits API error: {e}")
         return jsonify({
             'error': 'Could not get plant kits',
-            'aws_powered': True
+            'openai_powered': True
         }), 500
 
 
@@ -545,26 +595,110 @@ def get_user_plants(user_email):
             'plants': user_plants,
             'user_id': user.get('id'),
             'source': 'dynamodb',
-            'aws_powered': True
+            'openai_powered': True
         })
 
     except Exception as e:
         logger.error(f"User plants API error: {e}")
         return jsonify({
             'error': 'Could not get user plants',
-            'aws_powered': True
+            'openai_powered': True
+        }), 500
+
+
+@app.route('/api/analytics/conversation/<session_id>')
+def get_conversation_analytics(session_id):
+    """Get detailed conversation analytics for OpenAI optimization"""
+    try:
+        if session_id not in conversations:
+            return jsonify({'error': 'Session not found'}), 404
+
+        conversation = conversations[session_id]
+
+        # Calculate detailed analytics
+        analytics = {
+            'session_id': session_id,
+            'message_count': conversation.get('message_count', 0),
+            'total_tokens_used': conversation.get('total_tokens_used', 0),
+            'conversation_quality_score': conversation.get('conversation_quality_score', 0),
+            'duration_minutes': 0,
+            'avg_response_length': 0,
+            'plant_recommendations_given': 0,
+            'product_suggestions_given': 0,
+            'openai_performance': {}
+        }
+
+        # Analyze messages
+        messages = conversation.get('messages', [])
+        if messages:
+            # Calculate duration
+            start_time = datetime.fromisoformat(messages[0]['timestamp'])
+            end_time = datetime.fromisoformat(messages[-1]['timestamp'])
+            analytics['duration_minutes'] = (end_time - start_time).total_seconds() / 60
+
+            # Analyze assistant messages
+            assistant_messages = [m for m in messages if m.get('role') == 'assistant']
+            if assistant_messages:
+                total_length = sum(m.get('character_count', 0) for m in assistant_messages)
+                analytics['avg_response_length'] = total_length / len(assistant_messages)
+
+                analytics['plant_recommendations_given'] = sum(m.get('plants_provided', 0) for m in assistant_messages)
+                analytics['product_suggestions_given'] = sum(m.get('products_provided', 0) for m in assistant_messages)
+
+                # Token usage stats
+                total_tokens = sum(m.get('tokens_used', 0) for m in assistant_messages)
+                analytics['openai_performance'] = {
+                    'total_tokens': total_tokens,
+                    'avg_tokens_per_response': total_tokens / len(assistant_messages) if assistant_messages else 0,
+                    'estimated_cost_usd': total_tokens * 0.0015 / 1000  # Rough estimate for GPT-3.5-turbo
+                }
+
+        return jsonify({
+            'analytics': analytics,
+            'openai_powered': True,
+            'timestamp': datetime.now().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Analytics error: {e}")
+        return jsonify({
+            'error': 'Could not generate analytics',
+            'openai_powered': True
         }), 500
 
 
 @app.route('/api/health')
 def health_check():
-    """AWS-aware health check endpoint"""
+    """Enhanced health check with OpenAI status"""
     health_status = {
         'status': 'healthy',
-        'aws_powered': True,
+        'openai_powered': True,
         'timestamp': datetime.now().isoformat(),
-        'version': '2.0.0-aws'
+        'version': '2.1.0-openai-optimized'
     }
+
+    # Check OpenAI status
+    try:
+        if enhanced_chat_available:
+            from enhanced_chat import openai_client
+            if openai_client:
+                # Quick test call to verify OpenAI is working
+                test_response = openai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": "test"}],
+                    max_tokens=5
+                )
+                health_status['openai'] = {
+                    'status': 'connected',
+                    'model': 'gpt-3.5-turbo',
+                    'test_tokens': test_response.usage.total_tokens if hasattr(test_response, 'usage') else 'unknown'
+                }
+            else:
+                health_status['openai'] = {'status': 'client_not_initialized'}
+        else:
+            health_status['openai'] = {'status': 'enhanced_chat_not_available'}
+    except Exception as e:
+        health_status['openai'] = {'status': 'error', 'error': str(e)}
 
     # Check DynamoDB health
     if dynamo_connector:
@@ -579,8 +713,17 @@ def health_check():
     # Check enhanced chat
     health_status['enhanced_chat'] = enhanced_chat_available
 
-    # Check OpenAI
-    health_status['openai'] = openai_client is not None
+    # Overall status
+    openai_ok = health_status.get('openai', {}).get('status') == 'connected'
+    dynamo_ok = health_status.get('dynamodb', {}).get('connection') == 'healthy'
+
+    if openai_ok and dynamo_ok:
+        health_status['overall_status'] = 'fully_operational'
+    elif openai_ok or dynamo_ok:
+        health_status['overall_status'] = 'partially_operational'
+    else:
+        health_status['overall_status'] = 'degraded'
+        health_status['status'] = 'degraded'
 
     return jsonify(health_status)
 
@@ -600,14 +743,14 @@ def reset_session():
         return jsonify({
             'message': 'Session reset successfully',
             'new_session_id': new_session_id,
-            'aws_powered': True
+            'openai_powered': True
         })
 
     except Exception as e:
         logger.error(f"Session reset error: {e}")
         return jsonify({
             'error': 'Could not reset session',
-            'aws_powered': True
+            'openai_powered': True
         }), 500
 
 
@@ -616,7 +759,7 @@ def not_found(error):
     """Handle 404 errors"""
     return jsonify({
         'error': 'Not found',
-        'aws_powered': True
+        'openai_powered': True
     }), 404
 
 
@@ -626,22 +769,96 @@ def internal_error(error):
     logger.error(f"Internal server error: {error}")
     return jsonify({
         'error': 'Internal server error',
-        'aws_powered': True
+        'openai_powered': True
     }), 500
 
 
 if __name__ == "__main__":
-    # Determine port
+    # Pre-flight checks for optimal OpenAI performance
+    print("Starting GrowVRD with OpenAI optimization...")
+    print("=" * 50)
+
+    # Check OpenAI API key
+    openai_key = os.getenv('OPENAI_API_KEY')
+    if openai_key:
+        print("✓ OpenAI API key found")
+        if enhanced_chat_available:
+            print("✓ Enhanced OpenAI chat system loaded")
+
+            # Test OpenAI connection
+            try:
+                from enhanced_chat import openai_client
+
+                if openai_client:
+                    # Quick test
+                    test_response = openai_client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[{"role": "user", "content": "Hello"}],
+                        max_tokens=5
+                    )
+                    print(f"✓ OpenAI connection verified ({test_response.usage.total_tokens} tokens)")
+                else:
+                    print("✗ OpenAI client not initialized")
+            except Exception as e:
+                print(f"✗ OpenAI connection failed: {e}")
+                print("  Check your API key and billing at https://platform.openai.com/")
+        else:
+            print("✗ Enhanced chat system not available")
+    else:
+        print("✗ OpenAI API key not found")
+        print("  Add OPENAI_API_KEY to your .env file")
+
+    # Check DynamoDB
+    if dynamo_connector:
+        try:
+            health = dynamo_connector.health_check()
+            if health.get('connection') == 'healthy':
+                print("✓ DynamoDB connected successfully")
+
+                # Show table status
+                tables = health.get('tables', {})
+                for table_name, status in tables.items():
+                    if status.get('status') == 'ACTIVE':
+                        item_count = status.get('item_count', 0)
+                        print(f"  - {table_name}: {item_count} items")
+                    else:
+                        print(f"  - {table_name}: {status.get('status', 'ERROR')}")
+            else:
+                print("✗ DynamoDB connection issues")
+        except Exception as e:
+            print(f"✗ DynamoDB error: {e}")
+    else:
+        print("✗ DynamoDB connector not available")
+
+    # Performance status
+    print("\nPerformance Status:")
+    if openai_key and dynamo_connector and enhanced_chat_available:
+        print("✓ OPTIMAL: Full OpenAI + DynamoDB integration")
+        print("  Maximum ChatGPT-like experience enabled")
+    elif openai_key and enhanced_chat_available:
+        print("~ GOOD: OpenAI enabled, DynamoDB limited")
+    elif dynamo_connector:
+        print("~ LIMITED: DynamoDB only, no AI enhancement")
+    else:
+        print("✗ BASIC: Fallback mode only")
+
+    print("=" * 50)
+
+    # Determine port and start
     port = int(os.environ.get('PORT', 5001))
     debug_mode = os.environ.get('FLASK_ENV') == 'development'
 
-    logger.info(f"🌿 Starting GrowVRD AWS-powered application on port {port}")
-    logger.info(f"DynamoDB connector: {'✅ Connected' if dynamo_connector else '❌ Not available'}")
-    logger.info(f"Enhanced chat: {'✅ Available' if enhanced_chat_available else '❌ Not available'}")
-    logger.info(f"OpenAI: {'✅ Available' if openai_client else '❌ Not available'}")
+    logger.info(f"Starting GrowVRD application on port {port}")
 
-    app.run(
-        debug=debug_mode,
-        host='0.0.0.0',
-        port=port
-    )
+    try:
+        app.run(
+            debug=debug_mode,
+            host='0.0.0.0',
+            port=port
+        )
+    except Exception as e:
+        print(f"\nFailed to start application: {e}")
+        print("Common fixes:")
+        print("  - Check if port is already in use")
+        print("  - Verify .env file exists with correct variables")
+        print("  - Ensure all dependencies are installed")
