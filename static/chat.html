@@ -6,16 +6,69 @@
     <title>GrowVRD Plant Assistant</title>
     <style>
         :root {
-            --primary-color: #3a7d44;
-            --primary-light: #4CAF50;
-            --primary-dark: #2d623a;
-            --accent-color: #8BC34A;
-            --text-color: #333;
-            --light-gray: #f5f7f9;
-            --border-color: #ddd;
-            --success-color: #4CAF50;
-            --warning-color: #ff9800;
-            --error-color: #f44336;
+            /* Light Mode - Dark Ivory Green Theme */
+            --primary-color: #2a4a3a;
+            --primary-light: #3d5e4d;
+            --primary-dark: #1f3529;
+            --accent-color: #6b8e7a;
+            --accent-light: #8ba695;
+
+            --ivory: #f8f6f0;
+            --ivory-dark: #f2f0ea;
+            --ivory-light: #fdfcf8;
+
+            --text-primary: #2a3a2a;
+            --text-secondary: #4a5a4a;
+            --text-muted: #6a7a6a;
+
+            --bg-primary: var(--ivory);
+            --bg-secondary: var(--ivory-dark);
+            --bg-card: var(--ivory-light);
+
+            --border-light: #e5e3dd;
+            --border-medium: #d5d3cd;
+
+            --success: #4a6741;
+            --warning: #8b6914;
+            --error: #8b4513;
+
+            /* Shadows */
+            --shadow-sm: 0 2px 8px rgba(42, 74, 58, 0.08);
+            --shadow-md: 0 4px 16px rgba(42, 74, 58, 0.12);
+            --shadow-lg: 0 8px 32px rgba(42, 74, 58, 0.16);
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode - Dark Ivory Green Theme */
+            --primary-color: #6b8e7a;
+            --primary-light: #8ba695;
+            --primary-dark: #5a7a69;
+            --accent-color: #3d5e4d;
+            --accent-light: #4a6b5a;
+
+            --ivory: #1a1f1a;
+            --ivory-dark: #161b16;
+            --ivory-light: #1e231e;
+
+            --text-primary: #e8f0e8;
+            --text-secondary: #d0d8d0;
+            --text-muted: #a8b0a8;
+
+            --bg-primary: var(--ivory);
+            --bg-secondary: var(--ivory-dark);
+            --bg-card: var(--ivory-light);
+
+            --border-light: #2a352a;
+            --border-medium: #3a453a;
+
+            --success: #6b8e7a;
+            --warning: #c4941a;
+            --error: #c4651a;
+
+            /* Dark shadows */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
         * {
@@ -24,378 +77,444 @@
             padding: 0;
         }
 
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
             line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--light-gray);
-            display: flex;
-            flex-direction: column;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             min-height: 100vh;
+            transition: all 0.3s ease;
         }
 
+        /* Header */
         header {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 1rem 0;
+            color: var(--ivory-light);
+            padding: 1.5rem 0;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-md);
+            position: relative;
         }
 
         header h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            font-weight: 600;
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.5rem;
         }
 
         header p {
-            margin-top: 0.5rem;
-            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
             opacity: 0.9;
+            font-weight: 400;
         }
 
-        .main-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            max-width: 900px;
-            margin: 1rem auto;
-            padding: 0 1rem;
-            height: calc(100vh - 160px);
-        }
-
-        .chat-container {
-            background-color: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            flex: 1;
+        /* Theme Toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
             backdrop-filter: blur(10px);
         }
 
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--ivory-light);
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            height: calc(100vh - 200px);
+        }
+
+        .chat-container {
+            background: var(--bg-card);
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            border: 1px solid var(--border-light);
+            backdrop-filter: blur(20px);
+        }
+
+        /* Chat Header */
         .chat-header {
             background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent-color) 100%);
-            color: white;
-            padding: 1rem 1.5rem;
+            color: var(--ivory-light);
+            padding: 1.5rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .chat-header h2 {
-            font-size: 1.2rem;
-            font-weight: 500;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
 
-        .chat-header button {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
         }
 
-        .chat-header button:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-1px);
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
         }
 
+        /* Chat Messages */
         .chat-messages {
             flex: 1;
-            padding: 1.5rem;
+            padding: 2rem;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.5rem;
             scroll-behavior: smooth;
         }
 
         .message {
-            padding: 1rem 1.25rem;
-            border-radius: 20px;
-            max-width: 85%;
-            line-height: 1.5;
-            font-size: 0.95rem;
-            animation: slideInUp 0.3s ease-out;
-            position: relative;
-        }
-
-        .bot-message {
-            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
-            border-bottom-left-radius: 8px;
-            align-self: flex-start;
-            border: 1px solid #e0e0e0;
+            max-width: 90%;
+            animation: slideInUp 0.4s ease-out;
         }
 
         .user-message {
-            background: linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 100%);
-            border-bottom-right-radius: 8px;
             align-self: flex-end;
-            text-align: right;
-            border: 1px solid #e0e0e0;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: var(--ivory-light);
+            padding: 1rem 1.5rem;
+            border-radius: 20px 20px 8px 20px;
+            font-weight: 500;
+            box-shadow: var(--shadow-sm);
         }
 
-        .chat-input-container {
+        .bot-message {
+            align-self: flex-start;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 20px 20px 20px 8px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        /* Plant Card Styles */
+        .plant-card {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+
+        .plant-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .plant-image-container {
+            position: relative;
+            height: 200px;
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .plant-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .plant-card:hover .plant-image {
+            transform: scale(1.05);
+        }
+
+        .difficulty-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary-color);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            letter-spacing: -0.01em;
+        }
+
+        .plant-content {
             padding: 1.5rem;
-            background: linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%);
-            border-top: 1px solid var(--border-color);
+        }
+
+        .plant-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .plant-scientific {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 1rem;
+            font-weight: 400;
+        }
+
+        .plant-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+        }
+
+        .stat-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            letter-spacing: -0.01em;
+        }
+
+        .plant-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .plant-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .action-btn {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+
+        .care-btn {
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-light) 100%);
+            color: var(--ivory-light);
+            border: 1px solid var(--accent-color);
+        }
+
+        .care-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .shop-btn {
+            background: linear-gradient(135deg, var(--warning) 0%, #b8860b 100%);
+            color: var(--ivory-light);
+            border: 1px solid var(--warning);
+        }
+
+        .shop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-light);
         }
 
         .chat-input {
             display: flex;
-            gap: 0.75rem;
+            gap: 1rem;
             align-items: center;
         }
 
         .chat-input input {
             flex: 1;
-            padding: 1rem 1.25rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 0.95rem;
+            padding: 1.2rem 1.5rem;
+            border: 2px solid var(--border-medium);
+            border-radius: 16px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
             outline: none;
             transition: all 0.3s ease;
-            background: white;
+            background: var(--bg-card);
+            color: var(--text-primary);
         }
 
         .chat-input input:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(58, 125, 68, 0.1);
-            transform: translateY(-1px);
+            box-shadow: 0 0 0 4px rgba(42, 74, 58, 0.1);
+            transform: translateY(-2px);
         }
 
-        .chat-input button {
+        .chat-input input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-            color: white;
+            color: var(--ivory-light);
             border: none;
-            border-radius: 25px;
-            padding: 1rem 1.5rem;
+            border-radius: 16px;
+            padding: 1.2rem 2rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-width: 80px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.01em;
         }
 
-        .chat-input button:hover:not(:disabled) {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+        .send-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(58, 125, 68, 0.3);
+            box-shadow: var(--shadow-md);
         }
 
-        .chat-input button:disabled {
-            background: #ccc;
+        .send-btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
+        /* Typing Indicator */
         .typing-indicator {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 1rem 1.25rem;
-            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
-            border-radius: 20px;
-            margin: 0.5rem 0;
+            gap: 0.8rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 20px 20px 20px 8px;
             width: fit-content;
-            font-size: 0.9rem;
-            color: #666;
-            border-bottom-left-radius: 8px;
             animation: slideInUp 0.3s ease-out;
         }
 
-        .typing-indicator span {
+        .typing-dots {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .typing-dot {
             width: 8px;
             height: 8px;
-            background-color: var(--primary-color);
+            background: var(--primary-color);
             border-radius: 50%;
             animation: bounce 1.4s infinite ease-in-out both;
         }
 
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0s; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        .typing-dot:nth-child(3) { animation-delay: 0s; }
 
-        /* Quick Response Buttons */
-        .quick-responses {
-            margin: 1rem 0;
-            animation: slideInUp 0.4s ease-out;
-        }
-
-        .quick-responses-label {
-            font-size: 0.8rem;
-            color: #666;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .quick-response-btn {
-            display: inline-block;
-            background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e9 100%);
-            color: var(--primary-color);
-            border: 1px solid #d0e8d0;
-            border-radius: 20px;
-            padding: 0.5rem 1rem;
-            margin: 0.25rem;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .quick-response-btn:hover {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(58, 125, 68, 0.2);
-        }
-
-        /* Enhanced Plant Cards */
-        .plant-recommendation {
-            background: white;
-            border: 1px solid #e0e8e0;
-            border-radius: 16px;
-            margin: 1rem 0;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            animation: slideInUp 0.5s ease-out;
-        }
-
-        .plant-recommendation:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-        }
-
-        .plant-header {
+        /* Quick Actions */
+        .quick-actions {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e9 100%);
-            padding: 1.25rem;
-            border-bottom: 1px solid #d0e8d0;
-        }
-
-        .plant-image {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #e0f2e0 0%, #f0f9f0 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: var(--primary-color);
-            border: 2px solid #d0e8d0;
-        }
-
-        .plant-title h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .plant-title p {
-            margin: 0.25rem 0 0 0;
-            font-size: 0.85rem;
-            font-style: italic;
-            color: #666;
-        }
-
-        .plant-match-score {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(58, 125, 68, 0.3);
-        }
-
-        .plant-details {
-            padding: 1.25rem;
-        }
-
-        .plant-details p {
-            margin: 0 0 1rem 0;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            color: #555;
-        }
-
-        .plant-tags {
-            display: flex;
-            gap: 0.5rem;
             flex-wrap: wrap;
-            margin-bottom: 1rem;
+            gap: 0.8rem;
+            margin: 1rem 0;
         }
 
-        .plant-tag {
-            background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e9 100%);
-            color: var(--primary-color);
-            padding: 0.3rem 0.6rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            border: 1px solid #d0e8d0;
-        }
-
-        .plant-actions {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .care-btn, .shop-btn {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: none;
-            border-radius: 10px;
-            font-size: 0.85rem;
+        .quick-action-btn {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-medium);
+            border-radius: 20px;
+            padding: 0.6rem 1.2rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-weight: 600;
+            font-weight: 500;
+            letter-spacing: -0.01em;
         }
 
-        .care-btn {
-            background: linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 100%);
-            color: #1976d2;
-            border: 1px solid #bbdefb;
-        }
-
-        .care-btn:hover {
-            background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
-            color: white;
+        .quick-action-btn:hover {
+            background: var(--primary-color);
+            color: var(--ivory-light);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
-        }
-
-        .shop-btn {
-            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-            color: #f57c00;
-            border: 1px solid #ffcc02;
-        }
-
-        .shop-btn:hover {
-            background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(245, 124, 0, 0.3);
+            box-shadow: var(--shadow-sm);
         }
 
         /* Animations */
         @keyframes slideInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -412,83 +531,49 @@
             }
         }
 
-        .hidden {
-            display: none;
-        }
-
-        /* Connection Status */
-        .connection-status {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: var(--success-color);
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-
-        .connection-status.disconnected {
-            background-color: var(--error-color);
-            animation: pulse 1s infinite;
-        }
-
         @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.1); }
-            100% { opacity: 1; transform: scale(1); }
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 1;
+            }
         }
 
-        /* Footer */
-        footer {
-            padding: 1rem;
-            text-align: center;
-            font-size: 0.8rem;
-            color: #777;
-            background: linear-gradient(135deg, white 0%, #f9f9f9 100%);
-            border-top: 1px solid #eee;
-        }
-
-        /* Mobile Responsiveness */
-        @media (max-width: 600px) {
+        /* Responsive Design */
+        @media (max-width: 768px) {
             .main-container {
-                padding: 0 0.5rem;
-                height: calc(100vh - 140px);
+                padding: 0 1rem;
+                margin: 1rem auto;
+                height: calc(100vh - 160px);
             }
 
-            .message {
-                max-width: 90%;
+            .chat-header {
+                padding: 1rem 1.5rem;
             }
 
-            .plant-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
+            .chat-messages {
+                padding: 1.5rem;
             }
 
-            .plant-match-score {
-                align-self: flex-end;
+            .chat-input-container {
+                padding: 1.5rem;
+            }
+
+            .theme-toggle {
+                top: 1rem;
+                right: 1rem;
+            }
+
+            .plant-stats {
+                grid-template-columns: 1fr 1fr;
             }
 
             .plant-actions {
-                flex-direction: column;
-            }
-
-            .quick-response-btn {
-                display: block;
-                width: 100%;
-                margin: 0.25rem 0;
-                text-align: center;
-            }
-
-            .chat-input {
-                gap: 0.5rem;
-            }
-
-            .chat-input button {
-                padding: 0.75rem 1rem;
-                min-width: 70px;
+                grid-template-columns: 1fr;
             }
         }
 
@@ -498,333 +583,359 @@
         }
 
         .chat-messages::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
+            background: var(--bg-secondary);
         }
 
         .chat-messages::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
+            background: var(--border-medium);
             border-radius: 3px;
         }
 
         .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+            background: var(--primary-color);
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="connection-status" id="connection-status"></div>
-
     <header>
-        <h1>🌱 GrowVRD Plant Assistant</h1>
-        <p>Find your perfect plants with AI-powered recommendations</p>
+        <div class="theme-toggle" onclick="toggleTheme()">
+            <svg class="sun-icon" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg class="moon-icon hidden" viewBox="0 0 24 24">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+        </div>
+        <h1>🌱 GrowVRD</h1>
+        <p>Your intelligent plant companion</p>
     </header>
 
     <div class="main-container">
         <div class="chat-container">
             <div class="chat-header">
-                <h2>💬 Chat with our Plant Expert</h2>
-                <button id="reset-button">🔄 New Conversation</button>
+                <h2>Plant Assistant</h2>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Online</span>
+                </div>
             </div>
 
-            <div class="chat-messages" id="chat-messages">
-                <div class="message bot-message">
-                    Hi! I'm your GrowVRD plant assistant. I can help you find the perfect plants for your space. What kind of plants are you looking for? You can say something like "I want plants for my bedroom" or "something easy for beginners" - I understand natural language! 🌿
+            <div class="chat-messages" id="chatMessages">
+                <div class="bot-message">
+                    <div style="padding: 1.5rem;">
+                        <h3 style="margin-bottom: 1rem; color: var(--primary-color); font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em;">🌿 Welcome to GrowVRD!</h3>
+                        <p style="margin-bottom: 1rem; font-family: 'Inter', sans-serif; font-size: 1rem; line-height: 1.6;">I'm your personal plant expert, ready to help you find the perfect green companions for your space.</p>
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="sendQuickMessage('I need plants for my bedroom')">
+                                🛏️ Bedroom Plants
+                            </button>
+                            <button class="quick-action-btn" onclick="sendQuickMessage('Low maintenance plants')">
+                                🌵 Easy Care
+                            </button>
+                            <button class="quick-action-btn" onclick="sendQuickMessage('Plants for low light')">
+                                🌙 Low Light
+                            </button>
+                            <button class="quick-action-btn" onclick="sendQuickMessage('Air purifying plants')">
+                                💨 Air Purifying
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="chat-input-container">
                 <div class="chat-input">
-                    <input type="text" id="message-input" placeholder="Type your message here... (e.g., 'I want plants for my kitchen')" aria-label="Type your message">
-                    <button id="send-button">Send</button>
-                </div>
-                <div class="typing-indicator hidden" id="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    Thinking...
+                    <input
+                        type="text"
+                        id="messageInput"
+                        placeholder="Ask me about plants, care tips, or what might work for your space..."
+                        onkeypress="handleKeyPress(event)"
+                    >
+                    <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+                        </svg>
+                        Send
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer>
-        © 2025 GrowVRD - Your AI Plant Care Assistant
-    </footer>
-
     <script>
-        // Enhanced JavaScript for better UX
-        document.addEventListener('DOMContentLoaded', function() {
-            const chatMessages = document.getElementById('chat-messages');
-            const messageInput = document.getElementById('message-input');
-            const sendButton = document.getElementById('send-button');
-            const resetButton = document.getElementById('reset-button');
-            const typingIndicator = document.getElementById('typing-indicator');
-            const connectionStatus = document.getElementById('connection-status');
+        // Theme Management
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-            // Session management
-            let sessionId = localStorage.getItem('growvrd_session_id');
-            if (!sessionId) {
-                sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-                localStorage.setItem('growvrd_session_id', sessionId);
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+
+            // Toggle icon visibility
+            const sunIcon = document.querySelector('.sun-icon');
+            const moonIcon = document.querySelector('.moon-icon');
+
+            if (newTheme === 'dark') {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
             }
+        }
 
-            // Enhanced plant emoji mapping
-            const plantEmojis = {
-                'snake_plant': '🪴', 'snake plant': '🪴',
-                'pothos': '🌿', 'fiddle_leaf_fig': '🌳', 'fiddle leaf fig': '🌳',
-                'mint': '🌱', 'aloe_vera': '🌵', 'aloe vera': '🌵', 'aloe': '🌵',
-                'monstera': '🌿', 'peace_lily': '🌸', 'peace lily': '🌸',
-                'orchid': '🌺', 'jade_plant': '🌵', 'jade plant': '🌵', 'jade': '🌵',
-                'boston_fern': '🌿', 'boston fern': '🌿', 'fern': '🌿',
-                'spider_plant': '🌱', 'spider plant': '🌱',
-                'basil': '🌿', 'thyme': '🌿', 'dill': '🌿', 'cilantro': '🌿',
-                'rosemary': '🌿', 'sage': '🌿', 'parsley': '🌿',
-                'succulent': '🌵', 'cactus': '🌵',
-                'default': '🌱'
-            };
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
 
-            // Quick response suggestions
-            const quickResponses = {
-                initial: [
-                    "I want plants for my living room",
-                    "Something easy for beginners",
-                    "Low maintenance plants",
-                    "Plants for my kitchen"
-                ]
-            };
+            const sunIcon = document.querySelector('.sun-icon');
+            const moonIcon = document.querySelector('.moon-icon');
 
-            let isTyping = false;
-            let conversationStarted = false;
-
-            function getPlantEmoji(plantName) {
-                const name = plantName.toLowerCase().replace(/_/g, ' ');
-                return plantEmojis[name] || plantEmojis.default;
+            if (savedTheme === 'dark') {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
             }
+        }
 
-            function addMessage(content, isUser = false, data = null) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        // Chat functionality
+        let isTyping = false;
 
-                if (isUser) {
-                    messageDiv.textContent = content;
-                } else {
-                    messageDiv.innerHTML = content;
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message || isTyping) return;
+
+            addUserMessage(message);
+            input.value = '';
+
+            // Simulate bot response
+            showTypingIndicator();
+            setTimeout(() => {
+                hideTypingIndicator();
+                addBotResponse(message);
+            }, 2000 + Math.random() * 2000);
+        }
+
+        function sendQuickMessage(message) {
+            addUserMessage(message);
+            showTypingIndicator();
+            setTimeout(() => {
+                hideTypingIndicator();
+                addBotResponse(message);
+            }, 1500);
+        }
+
+        function addUserMessage(message) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'user-message';
+            messageDiv.textContent = message;
+
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            isTyping = true;
+            const chatMessages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+
+            typingDiv.innerHTML = `
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                <span>GrowVRD is thinking...</span>
+            `;
+
+            chatMessages.appendChild(typingDiv);
+            scrollToBottom();
+
+            document.getElementById('sendBtn').disabled = true;
+        }
+
+        function hideTypingIndicator() {
+            isTyping = false;
+            const typingDiv = document.getElementById('typingIndicator');
+            if (typingDiv) {
+                typingDiv.remove();
+            }
+            document.getElementById('sendBtn').disabled = false;
+        }
+
+        function addBotResponse(userMessage) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'bot-message';
+
+            // Generate dynamic plant recommendation based on user message
+            const plantData = generatePlantRecommendation(userMessage);
+
+            messageDiv.innerHTML = createPlantCard(plantData);
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function generatePlantRecommendation(userMessage) {
+            const plants = [
+                {
+                    name: "Snake Plant",
+                    scientific: "Sansevieria trifasciata",
+                    image: "https://images.unsplash.com/photo-1572688484438-313a6e50c333?w=400&h=300&fit=crop",
+                    difficulty: "Beginner",
+                    light: "Low to Bright",
+                    water: "Every 2-3 weeks",
+                    humidity: "30-50%",
+                    growth: "Slow",
+                    price: "$24.99",
+                    description: "Perfect for beginners! This resilient plant thrives on neglect and purifies air while you sleep.",
+                    careUrl: "#care-snake-plant",
+                    shopUrl: "#shop-snake-plant"
+                },
+                {
+                    name: "Monstera Deliciosa",
+                    scientific: "Monstera deliciosa",
+                    image: "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&h=300&fit=crop",
+                    difficulty: "Intermediate",
+                    light: "Bright Indirect",
+                    water: "Weekly",
+                    humidity: "60-70%",
+                    growth: "Fast",
+                    price: "$39.99",
+                    description: "Instagram-famous split-leaf beauty that makes a bold statement in any room.",
+                    careUrl: "#care-monstera",
+                    shopUrl: "#shop-monstera"
+                },
+                {
+                    name: "Pothos",
+                    scientific: "Epipremnum aureum",
+                    image: "https://images.unsplash.com/photo-1587691592099-24045742c181?w=400&h=300&fit=crop",
+                    difficulty: "Beginner",
+                    light: "Low to Medium",
+                    water: "When soil dry",
+                    humidity: "40-60%",
+                    growth: "Fast",
+                    price: "$18.99",
+                    description: "The ultimate beginner plant! Grows like crazy and forgives all your plant parent mistakes.",
+                    careUrl: "#care-pothos",
+                    shopUrl: "#shop-pothos"
+                },
+                {
+                    name: "Fiddle Leaf Fig",
+                    scientific: "Ficus lyrata",
+                    image: "https://images.unsplash.com/photo-1588816020884-b0ed4eeae5de?w=400&h=300&fit=crop",
+                    difficulty: "Advanced",
+                    light: "Bright Indirect",
+                    water: "Weekly",
+                    humidity: "50-60%",
+                    growth: "Medium",
+                    price: "$89.99",
+                    description: "The supermodel of houseplants. Dramatic, beautiful, and a little high-maintenance.",
+                    careUrl: "#care-fiddle",
+                    shopUrl: "#shop-fiddle"
                 }
+            ];
 
-                chatMessages.appendChild(messageDiv);
-
-                // Add plant recommendations if present
-                if (data && data.plants && data.plants.length > 0) {
-                    setTimeout(() => addPlantRecommendations(data.plants), 800);
-                }
-
-                scrollToBottom();
-
-                // Show quick responses for first interaction
-                if (!conversationStarted && !isUser) {
-                    setTimeout(addInitialQuickResponses, 1000);
-                    conversationStarted = true;
-                }
+            // Simple keyword matching for demo
+            if (userMessage.toLowerCase().includes('bedroom') || userMessage.toLowerCase().includes('low light')) {
+                return plants[0]; // Snake Plant
+            } else if (userMessage.toLowerCase().includes('easy') || userMessage.toLowerCase().includes('beginner')) {
+                return plants[2]; // Pothos
+            } else if (userMessage.toLowerCase().includes('statement') || userMessage.toLowerCase().includes('big')) {
+                return plants[1]; // Monstera
+            } else {
+                return plants[Math.floor(Math.random() * plants.length)];
             }
+        }
 
-            function addInitialQuickResponses() {
-                const container = document.createElement('div');
-                container.className = 'quick-responses';
-                container.innerHTML = '<div class="quick-responses-label">💡 Try saying:</div>';
+        function createPlantCard(plant) {
+            return `
+                <div class="plant-card">
+                    <div class="plant-image-container">
+                        <img src="${plant.image}" alt="${plant.name}" class="plant-image" />
+                        <div class="difficulty-badge">${plant.difficulty}</div>
+                    </div>
+                    <div class="plant-content">
+                        <h3 class="plant-name">${plant.name}</h3>
+                        <p class="plant-scientific">${plant.scientific}</p>
 
-                quickResponses.initial.forEach(suggestion => {
-                    const button = document.createElement('button');
-                    button.className = 'quick-response-btn';
-                    button.textContent = suggestion;
-                    button.onclick = () => {
-                        sendMessage(suggestion);
-                        container.remove();
-                    };
-                    container.appendChild(button);
-                });
-
-                chatMessages.appendChild(container);
-                scrollToBottom();
-            }
-
-            function addPlantRecommendations(plants) {
-                const container = document.createElement('div');
-                container.className = 'recommendations-container';
-
-                plants.forEach((plant, index) => {
-                    setTimeout(() => {
-                        const plantCard = createPlantCard(plant);
-                        container.appendChild(plantCard);
-                        scrollToBottom();
-                    }, index * 300);
-                });
-
-                chatMessages.appendChild(container);
-            }
-
-            function createPlantCard(plant) {
-                const plantDiv = document.createElement('div');
-                plantDiv.className = 'plant-recommendation';
-
-                const plantName = (plant.name || '').replace(/_/g, ' ');
-                const scientificName = (plant.scientific_name || '').replace(/_/g, ' ');
-                const description = plant.description || 'A wonderful plant for your space';
-                const matchScore = plant.normalized_score ? Math.round(plant.normalized_score) : Math.floor(Math.random() * 20) + 80;
-
-                plantDiv.innerHTML = `
-                    <div class="plant-header">
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div class="plant-image">${getPlantEmoji(plant.name)}</div>
-                            <div class="plant-title">
-                                <h3>${plantName.charAt(0).toUpperCase() + plantName.slice(1)}</h3>
-                                <p class="scientific-name">${scientificName}</p>
+                        <div class="plant-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">Light</div>
+                                <div class="stat-value">${plant.light}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Water</div>
+                                <div class="stat-value">${plant.water}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Humidity</div>
+                                <div class="stat-value">${plant.humidity}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Growth</div>
+                                <div class="stat-value">${plant.growth}</div>
                             </div>
                         </div>
-                        <div class="plant-match-score">${matchScore}% match</div>
-                    </div>
-                    <div class="plant-details">
-                        <p>${description}</p>
-                        <div class="plant-tags">
-                            ${plant.maintenance ? `<span class="plant-tag">🛠️ ${plant.maintenance} maintenance</span>` : ''}
-                            ${plant.natural_sunlight_needs ? `<span class="plant-tag">☀️ ${plant.natural_sunlight_needs.replace(/_/g, ' ')} light</span>` : ''}
-                            ${plant.water_frequency_days ? `<span class="plant-tag">💧 Water every ${plant.water_frequency_days} days</span>` : ''}
-                            ${plant.difficulty ? `<span class="plant-tag">📊 Difficulty: ${plant.difficulty}/10</span>` : ''}
-                        </div>
+
+                        <p class="plant-description">${plant.description}</p>
+
                         <div class="plant-actions">
-                            <button class="care-btn" onclick="askForCareInfo('${plant.name}')">📖 Care Guide</button>
-                            <button class="shop-btn" onclick="findProducts('${plant.name}')">🛒 Shop Supplies</button>
+                            <a href="${plant.careUrl}" class="action-btn care-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 11H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m8 0h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M9 20v-6h6v6"/>
+                                </svg>
+                                Care Guide
+                            </a>
+                            <a href="${plant.shopUrl}" class="action-btn shop-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="9" cy="21" r="1"/>
+                                    <circle cx="20" cy="21" r="1"/>
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                                </svg>
+                                Buy ${plant.price}
+                            </a>
                         </div>
                     </div>
-                `;
+                </div>
+            `;
+        }
 
-                return plantDiv;
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
             }
+        }
 
-            function showTypingIndicator() {
-                if (!isTyping) {
-                    typingIndicator.classList.remove('hidden');
-                    isTyping = true;
-                    scrollToBottom();
-                }
-            }
-
-            function hideTypingIndicator() {
-                if (isTyping) {
-                    typingIndicator.classList.add('hidden');
-                    isTyping = false;
-                }
-            }
-
-            function scrollToBottom() {
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chatMessages');
+            setTimeout(() => {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+            }, 100);
+        }
 
-            function setConnectionStatus(connected) {
-                if (connected) {
-                    connectionStatus.classList.remove('disconnected');
-                } else {
-                    connectionStatus.classList.add('disconnected');
-                }
-            }
-
-            async function sendMessage(messageText = null) {
-                const message = messageText || messageInput.value.trim();
-                if (!message) return;
-
-                // Update UI
-                if (!messageText) messageInput.value = '';
-                sendButton.disabled = true;
-                document.querySelectorAll('.quick-responses').forEach(el => el.remove());
-
-                // Add user message
-                addMessage(message, true);
-
-                // Show typing indicator
-                showTypingIndicator();
-                setConnectionStatus(true);
-
-                try {
-                    const response = await fetch('/api/chat', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            message: message,
-                            session_id: sessionId
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-
-                    const data = await response.json();
-
-                    // Hide typing indicator
-                    hideTypingIndicator();
-
-                    // Add bot response
-                    addMessage(data.content, false, data.data);
-
-                    // Handle different response types
-                    if (data.type === 'error') {
-                        console.error('Chat error:', data);
-                        setConnectionStatus(false);
-                    }
-
-                } catch (error) {
-                    hideTypingIndicator();
-                    setConnectionStatus(false);
-                    console.error('Network error:', error);
-                    addMessage('Sorry, I encountered a connection issue. Please try again. 🔄', false);
-                } finally {
-                    sendButton.disabled = false;
-                    messageInput.focus();
-                }
-            }
-
-            function resetConversation() {
-                // Clear conversation
-                chatMessages.innerHTML = '';
-                conversationStarted = false;
-
-                // Generate new session ID
-                sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-                localStorage.setItem('growvrd_session_id', sessionId);
-
-                // Add welcome message
-                addMessage("Hi! I'm your GrowVRD plant assistant. I can help you find the perfect plants for your space. What kind of plants are you looking for? You can say something like \"I want plants for my bedroom\" or \"something easy for beginners\" - I understand natural language! 🌿", false);
-            }
-
-            // Global functions for plant actions
-            window.askForCareInfo = function(plantName) {
-                sendMessage(`Tell me more about caring for ${plantName.replace(/_/g, ' ')}`);
-            };
-
-            window.findProducts = function(plantName) {
-                sendMessage(`What supplies do I need for ${plantName.replace(/_/g, ' ')}?`);
-            };
-
-            // Event listeners
-            sendButton.addEventListener('click', () => sendMessage());
-
-            messageInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-
-            resetButton.addEventListener('click', resetConversation);
-
-            // Auto-focus input
-            messageInput.focus();
-
-            // Initialize connection status
-            setConnectionStatus(true);
-        });
+        // Initialize theme on page load
+        document.addEventListener('DOMContentLoaded', initTheme);
     </script>
 </body>
 </html>
