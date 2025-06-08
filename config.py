@@ -63,3 +63,28 @@ config = Config()
 is_valid, missing_config = config.validate()
 if not is_valid:
     logger.warning(f"Configuration is missing these critical items: {missing_config}")
+
+
+class Config:
+    # ... existing config ...
+
+    # AWS Configuration - ADD THESE LINES
+    USE_DYNAMODB = True  # Switch to DynamoDB
+    FALLBACK_TO_SHEETS = True  # Safety fallback during transition
+
+    # AWS Settings
+    AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
+    S3_BUCKET = os.getenv('S3_BUCKET')
+
+    # DynamoDB Tables
+    DYNAMODB_PLANTS_TABLE = os.getenv('DYNAMODB_PLANTS_TABLE')
+    DYNAMODB_PRODUCTS_TABLE = os.getenv('DYNAMODB_PRODUCTS_TABLE')
+    DYNAMODB_KITS_TABLE = os.getenv('DYNAMODB_KITS_TABLE')
+    DYNAMODB_USERS_TABLE = os.getenv('DYNAMODB_USERS_TABLE')
+    DYNAMODB_PLANT_PRODUCTS_TABLE = os.getenv('DYNAMODB_PLANT_PRODUCTS_TABLE')
+    DYNAMODB_USER_PLANTS_TABLE = os.getenv('DYNAMODB_USER_PLANTS_TABLE')
+    DYNAMODB_LOCAL_VENDORS_TABLE = os.getenv('DYNAMODB_LOCAL_VENDORS_TABLE')
+
+    # Cognito
+    COGNITO_USER_POOL_ID = os.getenv('COGNITO_USER_POOL_ID')
+    COGNITO_CLIENT_ID = os.getenv('COGNITO_CLIENT_ID')
