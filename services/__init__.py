@@ -1,5 +1,5 @@
 # Services package
-from .chat_service import ChatService
+from .chat.chat_service import ChatService
 from .plant_service import PlantService
 from .payment_service import PaymentService
 from .auth_service import AuthService

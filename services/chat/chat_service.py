@@ -1,109 +1,108 @@
-"""Optimized chat service for plant advice with OpenAI integration."""
-
-import os
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
-from openai import OpenAI
+import os
+import openai
+from typing import Dict, Any, List
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ChatService:
     def __init__(self):
-        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-        self.cache = {'plants': [], 'products': [], 'timestamp': None}
-        self.cache_duration = timedelta(minutes=15)
-        self.model = "gpt-3.5-turbo"
-        self.max_tokens = 120
-        self.temperature = 0.8
-
-    def _get_system_prompt(self, user_plants: List[Dict] = None) -> str:
-        """Generate system prompt with user context."""
-        prompt = """You're GrowVRD, a friendly plant expert. Keep responses to 2-3 sentences, be warm and specific. 
-        Use emojis naturally. If suggesting plants, recommend 1-2 specific ones with brief care tips."""
+        self.openai_api_key = os.getenv('OPENAI_API_KEY')
+        if not self.openai_api_key:
+            logger.warning("OPENAI_API_KEY not found in environment variables")
         
-        if user_plants:
-            plant_names = [p.get('nickname', p.get('name')) for p in user_plants[:3]]
-            prompt += f"\n\nUser's plants: {', '.join(plant_names)}"
-            
-            needs_attention = [p.get('nickname') for p in user_plants 
-                            if p.get('health_status') == 'needs_attention']
-            if needs_attention:
-                prompt += f"\nNeeds attention: {', '.join(needs_attention)}"
-                
-        return prompt
-
-    def _get_relevant_plants(self, query: str, plants: List[Dict]) -> List[Dict]:
-        """Find plants relevant to the query."""
-        if not plants or not query:
-            return []
-            
-        query = query.lower()
-        scored = []
-        
-        for plant in plants:
-            score = 0
-            name = plant.get('name', '').lower()
-            desc = plant.get('description', '').lower()
-            
-            if 'easy' in query and 'easy' in desc:
-                score += 2
-            if 'low light' in query and 'low light' in desc:
-                score += 2
-            if any(word in query for word in ['dark', 'shady']) and 'low light' in desc:
-                score += 2
-                
-            if score > 0:
-                plant['match_score'] = score
-                scored.append(plant)
-                
-        return sorted(scored, key=lambda x: x.get('match_score', 0), reverse=True)[:3]
-
-    async def process_message(self, message: str, user_context: Dict = None) -> Dict[str, Any]:
-        """Process user message and generate response."""
+        # Initialize conversation history
+        self.conversation_history = [
+            {"role": "system", "content": "You are a helpful plant expert that recommends indoor and outdoor plants based on user preferences. Ask questions one at a time to understand their needs regarding location, lighting, maintenance level, and purpose. Keep responses concise and friendly."}
+        ]
+    
+    def _get_plant_recommendation(self, user_preferences: Dict[str, str]) -> str:
         try:
-            # Get user's plants if available
-            user_plants = user_context.get('plants', []) if user_context else []
+            if not self.openai_api_key:
+                return "I'm sorry, the plant recommendation service is currently unavailable."
+                
+            openai.api_key = self.openai_api_key
             
-            # Get relevant plants from database
-            plants = self._get_relevant_plants(message, user_plants or [])
+            prompt = f"""Based on the following user preferences, recommend 3 suitable plants and provide a brief explanation for each:
             
-            # Build conversation
-            messages = [
-                {"role": "system", "content": self._get_system_prompt(user_plants)},
-                {"role": "user", "content": message}
-            ]
+            Location: {location}
+            Lighting: {lighting}
+            Maintenance Level: {maintenance}
+            Purpose: {purpose}
             
-            # Add plant context if available
-            if plants:
-                context = "Available plants:\n"
-                context += "\n".join(f"- {p.get('name')}: {p.get('description', '')[:100]}" 
-                                     for p in plants)
-                messages.insert(1, {"role": "system", "content": context})
+            For each recommended plant, include:
+            1. Plant name (common and scientific)
+            2. Brief description
+            3. Care requirements
+            4. Why it's a good fit
             
-            # Generate response
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature
+            Format the response in a clean, easy-to-read way.""".format(
+                location=user_preferences.get('location', 'Not specified'),
+                lighting=user_preferences.get('lighting', 'Not specified'),
+                maintenance=user_preferences.get('maintenance', 'Not specified'),
+                purpose=user_preferences.get('purpose', 'Not specified')
             )
             
-            return {
-                'success': True,
-                'response': response.choices[0].message.content,
-                'plants': plants[:2],
-                'products': [],
-                'timestamp': datetime.now().isoformat()
-            }
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful plant expert that provides detailed plant recommendations."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.7
+            )
+            
+            return response.choices[0].message['content'].strip()
             
         except Exception as e:
-            logger.error(f"Chat error: {e}")
+            logger.error(f"Error getting plant recommendation: {e}")
+            return "I'm sorry, I encountered an error while processing your request. Please try again later."
+    
+    def process(self, message: str, session: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            # Store or update conversation history in session
+            if 'conversation' not in session:
+                session['conversation'] = []
+                session['user_preferences'] = {}
+            
+            # Add user message to conversation history
+            session['conversation'].append({"role": "user", "content": message})
+            
+            # Get response from OpenAI
+            if self.openai_api_key:
+                openai.api_key = self.openai_api_key
+                
+                # Prepare messages for OpenAI (system message + conversation history)
+                messages = [
+                    {"role": "system", "content": "You are a helpful plant expert that helps users find the perfect plants for their needs. Ask relevant questions about their location, lighting, maintenance preferences, and purpose to provide the best recommendations."}
+                ] + session['conversation'][-6:]  # Keep last 3 exchanges (6 messages)
+                
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=messages,
+                    max_tokens=150,
+                    temperature=0.7
+                )
+                
+                bot_response = response.choices[0].message['content'].strip()
+                
+                # Add bot response to conversation history
+                session['conversation'].append({"role": "assistant", "content": bot_response})
+                
+                return {
+                    'response': bot_response,
+                    'status': 'success'
+                }
+            else:
+                return {
+                    'response': "I'm sorry, the chat service is currently unavailable.",
+                    'status': 'error'
+                }
+                
+        except Exception as e:
+            logger.error(f"Error processing chat message: {e}")
             return {
-                'success': False,
-                'response': "I'm having trouble with that. Could you rephrase? 🌱",
-                'error': str(e),
-                'timestamp': datetime.now().isoformat()
+                'response': 'Sorry, I encountered an error processing your message. Please try again.',
+                'status': 'error'
             }
