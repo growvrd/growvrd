@@ -1,11 +1,26 @@
-# Environment Variables
+# Environment
 .env
-.env.local
-.env.development
-.env.test
-.env.production
+.env.*
+!.env.example
 
-# API Credentials
+# AWS
+.aws/
+!*.config
+!*.conf
+
+# Credentials
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.der
+*.p7b
+*.p7c
+*.p7s
+*.csr
+*.crl
+*.srl
 client_secrets.json
 token.pickle
 credentials.json
@@ -16,21 +31,20 @@ __pycache__/
 *$py.class
 *.so
 .Python
+*.pyc
+*.pyo
+*.pyd
+*.py,cover
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Build and Distribution
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
+.eggs/
 .installed.cfg
 *.egg
 MANIFEST
@@ -38,83 +52,157 @@ MANIFEST
 # Virtual Environment
 venv/
 env/
-ENV/
-env.bak/
-venv.bak/
 .venv/
 
 # IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Local development
+.local/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Testing
+.tox/
+
+# Production
+instance/
+.webassets-cache
+
+# Flask
+instance/
+.webassets-cache
+
+# Sphinx
+docs/_build/
+
+# PyBuilder
+target/
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+.sage/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+ENV/
+
+# IDE and Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
 # Logs
 *.log
-logs/
-log/
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Temporary files
-tmp/
-temp/
-.tmp/
-
-# Node modules (if you add any frontend tools later)
-node_modules/
-
-# Coverage reports
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
-
-# pytest
-.pytest_cache/
+# Local development
+local_settings.py
+db.sqlite3
 
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# pyenv
-.python-version
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
 
-# Backup files
-*.bak
+# AWS
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.der
+*.p7b
+*.p7c
+*.p7s
+*.csr
+*.crl
+*.srl
+
+# Project specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+*.dump
 *.backup
+*.bak
+*.tmp
 
-# UPDATED: Allow core GrowVRD data files but exclude user-generated data
-# Core application data (INCLUDE these)
-!GrowVRD_*.tsv
+# Temp files
+*~
+*.swp
+*.swo
 
-# Exclude user-generated or temporary data files
-data/temp_*.csv
-data/temp_*.tsv
-data/backup_*.tsv
-data/export_*.xlsx
-!data/README.md
-
-# User uploads
-uploads/
-static/uploads/
-
-# Cache
-.cache/
-*.cache
-
-# Replit specific (for later)
-.replit
-replit.nix
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?_cache/

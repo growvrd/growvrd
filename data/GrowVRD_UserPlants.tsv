@@ -1,8 +1,0 @@
-user_id	plant_id	nickname	acquisition_date	last_watered	last_fertilized	health_status	location_in_home	days_since_watered
-u001	p001	Spike	2025-01-20	2025-04-01	2025-03-15	healthy	bedroom	6
-u001	p005	Vera	2025-02-05	2025-03-28	2025-02-10	healthy	bathroom	10
-u002	p001	Green Giant	2025-01-10	2025-04-02	2025-03-10	healthy	living_room	5
-u002	p003	Fiddy	2025-01-15	2025-04-04	2025-03-20	needs_attention	living_room	3
-u003	p002	Trailing Beauty	2025-02-20	2025-04-03	2025-03-25	healthy	kitchen	4
-u004	p002	Ivy	2025-03-05	2025-04-01	2025-03-15	healthy	living_room	6
-u004	p004	Minty	2025-03-05	2025-04-05	2025-03-25	healthy	kitchen	2

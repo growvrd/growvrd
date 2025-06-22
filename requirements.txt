@@ -1,51 +1,42 @@
-# Core Flask Application
+# Core Application
 Flask==2.3.3
 Werkzeug==2.3.7
-
-# Environment and Configuration
 python-dotenv==1.0.0
 
-# HTTP Requests and API Integration
-requests==2.31.0
-
-# Google Sheets Integration
-gspread==5.12.0
-google-auth==2.23.4
-google-auth-oauthlib==1.1.0
-google-auth-httplib2==0.1.1
-
-# OpenAI Integration
-openai>=1.0.0
+# AWS Services
+boto3>=1.34.0
+botocore>=1.34.0
+python-jose[cryptography]>=3.3.0  # For JWT handling with Cognito
+requests>=2.31.0
 
 # Data Processing
 pandas==2.1.3
 numpy==1.24.4
 
-# Utility Libraries
-uuid>=1.30
-typing-extensions>=4.8.0
-
-# Development and Testing
-pytest==7.4.3
-pytest-flask==1.3.0
-
-# Future AWS Integration (commented out until needed)
-# boto3==1.34.0
-# botocore==1.34.0
-
-# Future Payment Processing (commented out until needed)
-# stripe==7.0.0
-
-# Optional: Enhanced Data Processing
-# openpyxl==3.1.2  # For Excel file handling
-# beautifulsoup4==4.12.2  # For web scraping if needed
-
 # Security
-cryptography==41.0.7
+cryptography>=41.0.7
+email-validator>=2.0.0
+PyJWT>=2.8.0
+python-keycloak>=2.15.0
 
 # Logging and Monitoring
 structlog==23.2.0
+watchtower>=3.0.1  # For CloudWatch logging
 
-boto3>=1.34.0
+# OpenAI Integration (if still needed)
+openai>=1.0.0
+
+# Development
+pytest==7.4.3
+pytest-flask==1.3.0
+pytest-cov>=4.1.0
+black>=23.7.0
+flake8>=6.0.0
+mypy>=1.4.1
+
+# Utility Libraries
+python-dateutil>=2.8.2
+typing-extensions>=4.8.0
+python-slugify>=8.0.1
 botocore>=1.34.0
 awscli>=1.32.0
